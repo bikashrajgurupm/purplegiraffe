@@ -145,7 +145,6 @@ if (remainingQuestions === 0 && !emailCaptured) {
             <h1>PurpleGiraffe</h1>
           </div>
           <div className="header-stats">
-            {/* Question counter disabled for testing */}
             {!emailCaptured && (
               <div className="question-counter">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -153,7 +152,7 @@ if (remainingQuestions === 0 && !emailCaptured) {
                 </svg>
                 <span>{remainingQuestions} of 3 free questions remaining</span>
               </div>
-            )}}
+            )}
           </div>
         </div>
       </header>
