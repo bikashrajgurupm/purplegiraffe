@@ -102,13 +102,8 @@ export default function Home() {
       <header className="header">
         <div className="header-content">
           <div className="logo">
-            <svg width="32" height="32" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M100 20 C100 20, 90 10, 85 15 C80 20, 85 30, 85 30 L85 80 C85 80, 70 85, 60 100 C50 115, 45 140, 50 160 C55 180, 70 190, 85 190 L80 180 L80 120 L100 120 L100 180 L95 190 C110 190, 125 180, 130 160 C135 140, 130 115, 120 100 C110 85, 95 80, 95 80 L95 30 C95 30, 100 20, 95 15 C90 10, 100 20, 100 20 Z" 
-                fill="#8B5CF6"/>
-              <circle cx="80" cy="50" r="3" fill="#6B46C1"/>
-              <circle cx="100" cy="50" r="3" fill="#6B46C1"/>
-            </svg>
-            <h1>PurpleGiraffe</h1>
+              <img src="/logo.png" alt="PurpleGiraffe" style={{width: '32px', height: '32px'}} />
+              <h1>PurpleGiraffe</h1>
           </div>
           <div className="header-actions">
             <button className="new-chat-btn">
@@ -129,18 +124,7 @@ export default function Home() {
             // Welcome Screen
             <div className="welcome-screen">
               <div className="welcome-logo">
-                <svg width="80" height="80" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M100 20 C100 20, 90 10, 85 15 C80 20, 85 30, 85 30 L85 80 C85 80, 70 85, 60 100 C50 115, 45 140, 50 160 C55 180, 70 190, 85 190 L80 180 L80 120 L100 120 L100 180 L95 190 C110 190, 125 180, 130 160 C135 140, 130 115, 120 100 C110 85, 95 80, 95 80 L95 30 C95 30, 100 20, 95 15 C90 10, 100 20, 100 20 Z" 
-                    fill="url(#gradient1)"/>
-                  <circle cx="80" cy="50" r="4" fill="#6B46C1"/>
-                  <circle cx="100" cy="50" r="4" fill="#6B46C1"/>
-                  <defs>
-                    <linearGradient id="gradient1" x1="50" y1="0" x2="150" y2="200">
-                      <stop offset="0%" stopColor="#A78BFA"/>
-                      <stop offset="100%" stopColor="#8B5CF6"/>
-                    </linearGradient>
-                  </defs>
-                </svg>
+                  <img src="/logo.png" alt="PurpleGiraffe" style={{width: '80px', height: '80px'}} />
               </div>
               <h2 className="welcome-title">Welcome to PurpleGiraffe</h2>
               <p className="welcome-subtitle">Your AI expert for app monetization</p>
@@ -166,14 +150,11 @@ export default function Home() {
               {messages.map((message) => (
                 <div key={message.id} className={`message-wrapper ${message.type}`}>
                   <div className="message-container">
-                    {message.type === 'bot' && (
+                   {message.type === 'bot' && (
                       <div className="avatar">
-                        <svg width="24" height="24" viewBox="0 0 200 200" fill="none">
-                          <path d="M100 20 C100 20, 90 10, 85 15 C80 20, 85 30, 85 30 L85 80 C85 80, 70 85, 60 100 C50 115, 45 140, 50 160 C55 180, 70 190, 85 190 L80 180 L80 120 L100 120 L100 180 L95 190 C110 190, 125 180, 130 160 C135 140, 130 115, 120 100 C110 85, 95 80, 95 80 L95 30 C95 30, 100 20, 95 15 C90 10, 100 20, 100 20 Z" 
-                            fill="#8B5CF6"/>
-                        </svg>
+                      <img src="/logo.png" alt="PurpleGiraffe" style={{width: '24px', height: '24px'}} />
                       </div>
-                    )}
+                  )}
                     <div className="message-content">
                       {message.content}
                     </div>
@@ -184,10 +165,7 @@ export default function Home() {
                 <div className="message-wrapper bot">
                   <div className="message-container">
                     <div className="avatar">
-                      <svg width="24" height="24" viewBox="0 0 200 200" fill="none">
-                        <path d="M100 20 C100 20, 90 10, 85 15 C80 20, 85 30, 85 30 L85 80 C85 80, 70 85, 60 100 C50 115, 45 140, 50 160 C55 180, 70 190, 85 190 L80 180 L80 120 L100 120 L100 180 L95 190 C110 190, 125 180, 130 160 C135 140, 130 115, 120 100 C110 85, 95 80, 95 80 L95 30 C95 30, 100 20, 95 15 C90 10, 100 20, 100 20 Z" 
-                          fill="#8B5CF6"/>
-                      </svg>
+                      <img src="/logo.png" alt="PurpleGiraffe" style={{width: '24px', height: '24px'}} />
                     </div>
                     <div className="message-content">
                       <div className="typing-indicator">
