@@ -55,10 +55,11 @@ export default function Home() {
     e.preventDefault();
     if (!input.trim() || loading) return;
 
-    if (remainingQuestions === 0 && !emailCaptured) {
-      setShowEmailModal(true);
-      return;
-    }
+    // Check if email is needed - DISABLED FOR TESTING
+// if (remainingQuestions === 0 && !emailCaptured) {
+//   setShowEmailModal(true);
+//   return;
+// }
 
     const userMessage = {
       id: Date.now().toString(),
