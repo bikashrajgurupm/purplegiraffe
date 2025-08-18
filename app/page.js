@@ -55,11 +55,11 @@ export default function Home() {
     e.preventDefault();
     if (!input.trim() || loading) return;
 
-    Check if email is needed - DISABLED FOR TESTING
-if (remainingQuestions === 0 && !emailCaptured) {
-  setShowEmailModal(true);
-  return;
-}
+    // Check if email is needed
+    if (remainingQuestions === 0 && !emailCaptured) {
+      setShowEmailModal(true);
+      return;
+    }
 
     const userMessage = {
       id: Date.now().toString(),
@@ -93,6 +93,7 @@ if (remainingQuestions === 0 && !emailCaptured) {
         setQuestionCount(data.questionCount);
         setRemainingQuestions(data.remainingQuestions);
 
+        // Show email modal after 3rd question
         if (data.remainingQuestions === 0 && !emailCaptured) {
           setTimeout(() => setShowEmailModal(true), 1000);
         }
