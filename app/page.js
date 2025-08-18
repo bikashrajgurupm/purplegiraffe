@@ -8,7 +8,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState('');
   const [questionCount, setQuestionCount] = useState(0);
-  const [remainingQuestions, setRemainingQuestions] = useState(3);
+  const [remainingQuestions, setRemainingQuestions] = useState(999); // Set high for unlimited
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [email, setEmail] = useState('');
   const [emailCaptured, setEmailCaptured] = useState(false);
@@ -32,7 +32,8 @@ export default function Home() {
         });
         const data = await response.json();
         setQuestionCount(data.questionCount);
-        setRemainingQuestions(data.remainingQuestions);
+        // Ignore the remaining questions from API - we're unlimited now
+        setRemainingQuestions(999);
         setEmailCaptured(data.emailCaptured);
       } catch (error) {
         console.error('Failed to load session:', error);
@@ -55,11 +56,11 @@ export default function Home() {
     e.preventDefault();
     if (!input.trim() || loading) return;
 
-    // Check if email is needed
-    if (remainingQuestions === 0 && !emailCaptured) {
-      setShowEmailModal(true);
-      return;
-    }
+    // Email check DISABLED - unlimited questions for testing
+    // if (remainingQuestions === 0 && !emailCaptured) {
+    //   setShowEmailModal(true);
+    //   return;
+    // }
 
     const userMessage = {
       id: Date.now().toString(),
@@ -81,23 +82,24 @@ export default function Home() {
       const data = await response.json();
 
       if (response.status === 403) {
-        setShowEmailModal(true);
-      } else {
-        const botMessage = {
-          id: (Date.now() + 1).toString(),
-          type: 'bot',
-          content: data.response
-        };
-
-        setMessages(prev => [...prev, botMessage]);
-        setQuestionCount(data.questionCount);
-        setRemainingQuestions(data.remainingQuestions);
-
-        // Show email modal after 3rd question
-        if (data.remainingQuestions === 0 && !emailCaptured) {
-          setTimeout(() => setShowEmailModal(true), 1000);
-        }
+        // This shouldn't happen now since we disabled limits
+        console.log('Unexpected 403 error');
       }
+      
+      const botMessage = {
+        id: (Date.now() + 1).toString(),
+        type: 'bot',
+        content: data.response || data.error || 'Sorry, something went wrong.'
+      };
+
+      setMessages(prev => [...prev, botMessage]);
+      setQuestionCount(data.questionCount || questionCount + 1);
+      
+      // Email modal after 3 questions DISABLED
+      // if (data.remainingQuestions === 0 && !emailCaptured) {
+      //   setTimeout(() => setShowEmailModal(true), 1000);
+      // }
+      
     } catch (error) {
       const errorMessage = {
         id: (Date.now() + 1).toString(),
@@ -146,14 +148,15 @@ export default function Home() {
             <h1>PurpleGiraffe</h1>
           </div>
           <div className="header-stats">
-            {!emailCaptured && (
+            {/* Question counter DISABLED for testing */}
+            {/* {!emailCaptured && (
               <div className="question-counter">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
                 </svg>
                 <span>{remainingQuestions} of 3 free questions remaining</span>
               </div>
-            )}
+            )} */}
           </div>
         </div>
       </header>
@@ -198,6 +201,7 @@ export default function Home() {
         </form>
       </main>
 
+      {/* Email Modal - keeping the code but it won't show since showEmailModal is always false */}
       {showEmailModal && (
         <div className="modal-overlay">
           <div className="modal">
