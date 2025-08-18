@@ -93,12 +93,12 @@ export async function POST(request) {
     if (sessionError) throw sessionError;
 
     // Check free tier limits
-    if (!session?.email_captured && session.question_count >= 3) {
-      return Response.json({ 
-        error: 'Free tier limit reached', 
-        requiresEmail: true 
-      }, { status: 403 });
-    }
+    // if (!session?.email_captured && session.question_count >= 3) {
+    //   return Response.json({ 
+    //     error: 'Free tier limit reached', 
+    //     requiresEmail: true 
+    //   }, { status: 403 });
+    // }
 
     // Get AI response
     const completion = await openai.chat.completions.create({
