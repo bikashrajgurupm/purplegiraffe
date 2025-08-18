@@ -42,7 +42,7 @@ export async function POST(request) {
 
     if (sessionError) throw sessionError;
 
-    // Check free tier limits 
+    //Check free tier limits 
     if (!session?.email_captured && session.question_count >= 3) {
       return Response.json({ 
         error: 'Free tier limit reached', 
