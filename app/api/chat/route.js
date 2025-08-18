@@ -50,14 +50,14 @@ export async function POST(request) {
 
    
     // Check free tier limits (skip for admin emails)
-const isAdmin = session?.email && ADMIN_EMAILS.includes(session.email.toLowerCase());
+// const isAdmin = session?.email && ADMIN_EMAILS.includes(session.email.toLowerCase());
 
-if (!isAdmin && !session?.email_captured && session.question_count >= 3) {
-  return Response.json({ 
-    error: 'Free tier limit reached', 
-    requiresEmail: true 
-  }, { status: 403 });
-}
+// if (!isAdmin && !session?.email_captured && session.question_count >= 3) {
+//   return Response.json({ 
+//     error: 'Free tier limit reached', 
+//     requiresEmail: true 
+//   }, { status: 403 });
+// }
 
     // Get AI response
     const completion = await openai.chat.completions.create({
