@@ -25,6 +25,12 @@ Always provide:
 
 Keep responses concise but comprehensive. Focus on practical implementation.`;
 
+// Configuration - Add your email here for unlimited access
+const ADMIN_EMAILS = [
+  'bikashrajguru@gmail.com',  // Replace with your actual email
+  // Add more admin emails here if needed
+];
+
 export async function POST(request) {
   try {
     const { message, sessionId } = await request.json();
@@ -42,13 +48,16 @@ export async function POST(request) {
 
     if (sessionError) throw sessionError;
 
-    // Check free tier limits
-    if (!session?.email_captured && session.question_count >= 3) {
-      return Response.json({ 
-        error: 'Free tier limit reached', 
-        requiresEmail: true 
-      }, { status: 403 });
-    }
+   
+    // Check free tier limits (skip for admin emails)
+const isAdmin = session?.email && ADMIN_EMAILS.includes(session.email.toLowerCase());
+
+if (!isAdmin && !session?.email_captured && session.question_count >= 3) {
+  return Response.json({ 
+    error: 'Free tier limit reached', 
+    requiresEmail: true 
+  }, { status: 403 });
+}
 
     // Get AI response
     const completion = await openai.chat.completions.create({
