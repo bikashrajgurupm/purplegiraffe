@@ -8,10 +8,6 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState('');
   const [questionCount, setQuestionCount] = useState(0);
-  const [remainingQuestions, setRemainingQuestions] = useState(999); // Set high for unlimited
-  const [showEmailModal, setShowEmailModal] = useState(false);
-  const [email, setEmail] = useState('');
-  const [emailCaptured, setEmailCaptured] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -32,20 +28,12 @@ export default function Home() {
         });
         const data = await response.json();
         setQuestionCount(data.questionCount);
-        // Ignore the remaining questions from API - we're unlimited now
-        setRemainingQuestions(999);
-        setEmailCaptured(data.emailCaptured);
       } catch (error) {
         console.error('Failed to load session:', error);
       }
     };
 
     initSession();
-    setMessages([{
-      id: '1',
-      type: 'bot',
-      content: "👋 Welcome to PurpleGiraffe! I'm your AI monetization expert. Ask me anything about app monetization, ad networks, eCPM optimization, or revenue strategies."
-    }]);
   }, []);
 
   useEffect(() => {
@@ -55,12 +43,6 @@ export default function Home() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!input.trim() || loading) return;
-
-    // Email check DISABLED - unlimited questions for testing
-    // if (remainingQuestions === 0 && !emailCaptured) {
-    //   setShowEmailModal(true);
-    //   return;
-    // }
 
     const userMessage = {
       id: Date.now().toString(),
@@ -80,11 +62,6 @@ export default function Home() {
       });
 
       const data = await response.json();
-
-      if (response.status === 403) {
-        // This shouldn't happen now since we disabled limits
-        console.log('Unexpected 403 error');
-      }
       
       const botMessage = {
         id: (Date.now() + 1).toString(),
@@ -94,11 +71,6 @@ export default function Home() {
 
       setMessages(prev => [...prev, botMessage]);
       setQuestionCount(data.questionCount || questionCount + 1);
-      
-      // Email modal after 3 questions DISABLED
-      // if (data.remainingQuestions === 0 && !emailCaptured) {
-      //   setTimeout(() => setShowEmailModal(true), 1000);
-      // }
       
     } catch (error) {
       const errorMessage = {
@@ -112,134 +84,161 @@ export default function Home() {
     }
   };
 
-  const handleEmailSubmit = async (e) => {
-    e.preventDefault();
-    if (!email.trim()) return;
+  // Example questions for quick start
+  const exampleQuestions = [
+    "My eCPM dropped 40% overnight",
+    "How to optimize AppLovin waterfall?",
+    "Best fill rate for rewarded ads?",
+    "Unity ads showing blank screen"
+  ];
 
-    try {
-      await fetch('/api/capture-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, sessionId })
-      });
-      setEmailCaptured(true);
-      setShowEmailModal(false);
-      setRemainingQuestions(999);
-      
-      const thankYouMessage = {
-        id: Date.now().toString(),
-        type: 'bot',
-        content: '✨ Thank you! You now have unlimited access to ask questions. How can I help you optimize your app monetization?'
-      };
-      setMessages(prev => [...prev, thankYouMessage]);
-    } catch (error) {
-      alert('Failed to save email. Please try again.');
-    }
+  const handleExampleClick = (question) => {
+    setInput(question);
   };
 
   return (
     <div className="app">
+      {/* Clean Header */}
       <header className="header">
         <div className="header-content">
           <div className="logo">
-            <svg className="logo-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+            <svg width="32" height="32" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M100 20 C100 20, 90 10, 85 15 C80 20, 85 30, 85 30 L85 80 C85 80, 70 85, 60 100 C50 115, 45 140, 50 160 C55 180, 70 190, 85 190 L80 180 L80 120 L100 120 L100 180 L95 190 C110 190, 125 180, 130 160 C135 140, 130 115, 120 100 C110 85, 95 80, 95 80 L95 30 C95 30, 100 20, 95 15 C90 10, 100 20, 100 20 Z" 
+                fill="#8B5CF6"/>
+              <circle cx="80" cy="50" r="3" fill="#6B46C1"/>
+              <circle cx="100" cy="50" r="3" fill="#6B46C1"/>
             </svg>
             <h1>PurpleGiraffe</h1>
           </div>
-          <div className="header-stats">
-            {/* Question counter DISABLED for testing */}
-            {/* {!emailCaptured && (
-              <div className="question-counter">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-                </svg>
-                <span>{remainingQuestions} of 3 free questions remaining</span>
-              </div>
-            )} */}
+          <div className="header-actions">
+            <button className="new-chat-btn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              New Chat
+            </button>
           </div>
         </div>
       </header>
 
+      {/* Main Chat Area */}
       <main className="chat-container">
-        <div className="messages">
-          {messages.map((message) => (
-            <div key={message.id} className={`message ${message.type}`}>
-              <div className="message-content">
-                {message.content}
+        <div className="chat-content">
+          {messages.length === 0 ? (
+            // Welcome Screen
+            <div className="welcome-screen">
+              <div className="welcome-logo">
+                <svg width="80" height="80" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M100 20 C100 20, 90 10, 85 15 C80 20, 85 30, 85 30 L85 80 C85 80, 70 85, 60 100 C50 115, 45 140, 50 160 C55 180, 70 190, 85 190 L80 180 L80 120 L100 120 L100 180 L95 190 C110 190, 125 180, 130 160 C135 140, 130 115, 120 100 C110 85, 95 80, 95 80 L95 30 C95 30, 100 20, 95 15 C90 10, 100 20, 100 20 Z" 
+                    fill="url(#gradient1)"/>
+                  <circle cx="80" cy="50" r="4" fill="#6B46C1"/>
+                  <circle cx="100" cy="50" r="4" fill="#6B46C1"/>
+                  <defs>
+                    <linearGradient id="gradient1" x1="50" y1="0" x2="150" y2="200">
+                      <stop offset="0%" stopColor="#A78BFA"/>
+                      <stop offset="100%" stopColor="#8B5CF6"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+              <h2 className="welcome-title">Welcome to PurpleGiraffe</h2>
+              <p className="welcome-subtitle">Your AI expert for app monetization</p>
+              
+              <div className="example-questions">
+                {exampleQuestions.map((question, index) => (
+                  <button
+                    key={index}
+                    className="example-question"
+                    onClick={() => handleExampleClick(question)}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M7 17L17 7M17 7H7M17 7V17"/>
+                    </svg>
+                    {question}
+                  </button>
+                ))}
               </div>
             </div>
-          ))}
-          {loading && (
-            <div className="message bot">
-              <div className="message-content loading">
-                <svg className="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 12a9 9 0 11-6.219-8.56"/>
-                </svg>
-                <span>Thinking...</span>
-              </div>
+          ) : (
+            // Messages
+            <div className="messages">
+              {messages.map((message) => (
+                <div key={message.id} className={`message-wrapper ${message.type}`}>
+                  <div className="message-container">
+                    {message.type === 'bot' && (
+                      <div className="avatar">
+                        <svg width="24" height="24" viewBox="0 0 200 200" fill="none">
+                          <path d="M100 20 C100 20, 90 10, 85 15 C80 20, 85 30, 85 30 L85 80 C85 80, 70 85, 60 100 C50 115, 45 140, 50 160 C55 180, 70 190, 85 190 L80 180 L80 120 L100 120 L100 180 L95 190 C110 190, 125 180, 130 160 C135 140, 130 115, 120 100 C110 85, 95 80, 95 80 L95 30 C95 30, 100 20, 95 15 C90 10, 100 20, 100 20 Z" 
+                            fill="#8B5CF6"/>
+                        </svg>
+                      </div>
+                    )}
+                    <div className="message-content">
+                      {message.content}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {loading && (
+                <div className="message-wrapper bot">
+                  <div className="message-container">
+                    <div className="avatar">
+                      <svg width="24" height="24" viewBox="0 0 200 200" fill="none">
+                        <path d="M100 20 C100 20, 90 10, 85 15 C80 20, 85 30, 85 30 L85 80 C85 80, 70 85, 60 100 C50 115, 45 140, 50 160 C55 180, 70 190, 85 190 L80 180 L80 120 L100 120 L100 180 L95 190 C110 190, 125 180, 130 160 C135 140, 130 115, 120 100 C110 85, 95 80, 95 80 L95 30 C95 30, 100 20, 95 15 C90 10, 100 20, 100 20 Z" 
+                          fill="#8B5CF6"/>
+                      </svg>
+                    </div>
+                    <div className="message-content">
+                      <div className="typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
             </div>
           )}
-          <div ref={messagesEndRef} />
         </div>
 
-        <form onSubmit={handleSubmit} className="input-form">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about eCPM, ad networks, revenue optimization..."
-            className="message-input"
-            disabled={loading}
-          />
-          <button type="submit" className="send-button" disabled={loading || !input.trim()}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="22" y1="2" x2="11" y2="13"/>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-            </svg>
-          </button>
-        </form>
-      </main>
-
-      {/* Email Modal - keeping the code but it won't show since showEmailModal is always false */}
-      {showEmailModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <button className="modal-close" onClick={() => setShowEmailModal(false)}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </button>
-            <div className="modal-header">
-              <svg className="modal-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                <polyline points="22,6 12,13 2,6"/>
-              </svg>
-              <h2>Continue with Unlimited Access</h2>
-            </div>
-            <p className="modal-description">
-              Enter your email to continue asking questions and get expert monetization advice.
-            </p>
-            <form onSubmit={handleEmailSubmit} className="email-form">
+        {/* Input Area */}
+        <div className="input-wrapper">
+          <form onSubmit={handleSubmit} className="input-form">
+            <div className="input-container">
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
-                className="email-input"
-                required
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Ask about monetization, ad networks, eCPM optimization..."
+                className="message-input"
+                disabled={loading}
               />
-              <button type="submit" className="email-submit">
-                Get Unlimited Access
+              <button 
+                type="submit" 
+                className="send-button" 
+                disabled={loading || !input.trim()}
+              >
+                {loading ? (
+                  <svg className="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 12a9 9 0 11-6.219-8.56"/>
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="22" y1="2" x2="11" y2="13"/>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                  </svg>
+                )}
               </button>
-            </form>
-            <p className="modal-footer">
-              No spam, ever. Upgrade to paid plans for advanced features.
-            </p>
-          </div>
+            </div>
+          </form>
+          <p className="input-footer">
+            PurpleGiraffe AI can make mistakes. Verify important information.
+          </p>
         </div>
-      )}
+      </main>
     </div>
   );
 }
