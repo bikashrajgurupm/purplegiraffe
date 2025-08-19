@@ -28,6 +28,30 @@ export default function Home() {
           body: JSON.stringify({ sessionId: storedSessionId })
         });
         const data = await response.json();
+        const startNewChat = () => {
+        // Clear current conversation
+        setMessages([]);
+        setInput('');
+        setQuestionCount(0);
+  
+        // Generate new session ID
+        const newSessionId = Math.random().toString(36).substring(2) + Date.now().toString(36);
+        localStorage.setItem('pg_session_id', newSessionId);
+        setSessionId(newSessionId);
+  
+        // Show welcome message
+        setMessages([{
+        id: Date.now().toString(),
+        type: 'bot',
+        content: "👋 Welcome to PurpleGiraffe! I'm your AI monetization expert. Ask me anything about app monetization, ad networks, eCPM optimization, or revenue strategies."
+  }]);
+  
+  // Hide sidebar if you want
+  // setShowSidebar(false);
+};
+
+
+        
         setQuestionCount(data.questionCount);
       } catch (error) {
         console.error('Failed to load session:', error);
@@ -117,11 +141,11 @@ export default function Home() {
                 <line x1="3" y1="18" x2="21" y2="18"/>
               </svg>
             </button>
-            <button className="new-chat-btn">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
+           <button className="new-chat-btn" onClick={startNewChat}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
               New Chat
             </button>
           </div>
