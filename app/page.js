@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import PricingTiers from './components/PricingTiers';
 import './globals.css';
+import PricingTiers from './components/PricingTiers';
 
 export default function Home() {
   const [messages, setMessages] = useState([]);
@@ -470,16 +470,16 @@ export default function Home() {
           </div>
         </main>
 
-        {/* Pricing Sidebar - existing code */}
+      
        {/* Pricing Sidebar */}
-            {showSidebar && (
-            <aside className="pricing-sidebar">
-             <PricingTiers 
+          {showSidebar && (
+          <aside className="pricing-sidebar">
+            <PricingTiers 
             user={user} 
-            currentTier={user?.tier || 'free'} 
-            />
-          </aside>
-        )}
+          currentTier={user?.tier || 'free'} 
+          />
+        </aside>
+      )}
 
       {/* Auth Modal */}
       {showAuthModal && (
