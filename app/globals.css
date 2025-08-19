@@ -1,4 +1,4 @@
-/* app/globals.css - Clean Modern UI like Perplexity/OpenAI */
+/* app/globals.css - With Pricing Sidebar */
 * {
   margin: 0;
   padding: 0;
@@ -15,6 +15,8 @@
   --text-secondary: #6B7280;
   --border-color: #E5E7EB;
   --hover-bg: #F3F4F6;
+  --success-green: #10B981;
+  --premium-gradient: linear-gradient(135deg, #8B5CF6 0%, #6B46C1 100%);
 }
 
 body {
@@ -44,12 +46,11 @@ body {
   align-items: center;
   padding: 0 2rem;
   flex-shrink: 0;
+  z-index: 100;
 }
 
 .header-content {
   width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -72,6 +73,7 @@ body {
   gap: 1rem;
 }
 
+.toggle-sidebar-btn,
 .new-chat-btn {
   display: flex;
   align-items: center;
@@ -86,10 +88,18 @@ body {
   transition: all 0.2s;
 }
 
+.toggle-sidebar-btn:hover,
 .new-chat-btn:hover {
   background: var(--hover-bg);
   border-color: var(--primary-purple);
   color: var(--primary-purple);
+}
+
+/* Main Container */
+.main-container {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
 }
 
 /* Chat Container */
@@ -106,6 +116,208 @@ body {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+}
+
+/* Pricing Sidebar */
+.pricing-sidebar {
+  width: 380px;
+  background: var(--bg-primary);
+  border-left: 1px solid var(--border-color);
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.sidebar-content {
+  padding: 2rem 1.5rem;
+}
+
+.sidebar-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+}
+
+/* Pricing Cards */
+.pricing-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+  transition: all 0.3s;
+}
+
+.pricing-card.premium {
+  border-color: var(--primary-purple);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.1);
+}
+
+.pricing-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.card-badge {
+  position: absolute;
+  top: -10px;
+  right: 20px;
+  background: var(--premium-gradient);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.card-header {
+  margin-bottom: 1.25rem;
+}
+
+.card-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--bg-secondary);
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  color: var(--primary-purple);
+}
+
+.pricing-card h4 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+}
+
+.price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+}
+
+.price .amount {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.price .period {
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+.features-list {
+  list-style: none;
+  margin-bottom: 1.5rem;
+}
+
+.features-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+.features-list svg {
+  color: var(--success-green);
+  flex-shrink: 0;
+}
+
+.upgrade-btn {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.upgrade-btn.primary {
+  background: var(--premium-gradient);
+  color: white;
+}
+
+.upgrade-btn.primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.upgrade-btn.secondary {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.upgrade-btn.secondary:hover {
+  background: var(--hover-bg);
+  border-color: var(--primary-purple);
+  color: var(--primary-purple);
+}
+
+/* Expert Contact */
+.expert-contact {
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.contact-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.25rem;
+}
+
+.expert-email {
+  color: var(--primary-purple);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.expert-email:hover {
+  text-decoration: underline;
+}
+
+/* Current Plan */
+.current-plan {
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 0.5rem;
+  text-align: center;
+}
+
+.plan-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.25rem;
+}
+
+.plan-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.plan-limit {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
 }
 
 /* Welcome Screen */
@@ -352,27 +564,43 @@ body {
 }
 
 /* Scrollbar */
-.chat-content::-webkit-scrollbar {
+::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 
-.chat-content::-webkit-scrollbar-track {
+::-webkit-scrollbar-track {
   background: var(--bg-secondary);
 }
 
-.chat-content::-webkit-scrollbar-thumb {
+::-webkit-scrollbar-thumb {
   background: #D1D5DB;
   border-radius: 4px;
 }
 
-.chat-content::-webkit-scrollbar-thumb:hover {
+::-webkit-scrollbar-thumb:hover {
   background: #9CA3AF;
 }
 
 /* Responsive */
+@media (max-width: 1024px) {
+  .pricing-sidebar {
+    position: fixed;
+    right: 0;
+    top: 60px;
+    height: calc(100vh - 60px);
+    box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);
+    z-index: 50;
+  }
+}
+
 @media (max-width: 768px) {
   .header {
     padding: 0 1rem;
+  }
+
+  .pricing-sidebar {
+    width: 100%;
   }
 
   .example-questions {
