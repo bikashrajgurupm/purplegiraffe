@@ -10,6 +10,28 @@ export default function Home() {
   const [questionCount, setQuestionCount] = useState(0);
   const [showSidebar, setShowSidebar] = useState(true);
   const messagesEndRef = useRef(null);
+  // ADD THIS FUNCTION HERE
+const startNewChat = () => {
+  // Clear current conversation
+  setMessages([]);
+  setInput('');
+  setQuestionCount(0);
+  
+  // Generate new session ID
+  const newSessionId = Math.random().toString(36).substring(2) + Date.now().toString(36);
+  localStorage.setItem('pg_session_id', newSessionId);
+  setSessionId(newSessionId);
+  
+  // Show welcome message (optional)
+  setTimeout(() => {
+    setMessages([{
+      id: Date.now().toString(),
+      type: 'bot',
+      content: "👋 Welcome to PurpleGiraffe! I'm your AI monetization expert. Ask me anything about app monetization, ad networks, eCPM optimization, or revenue strategies."
+    }]);
+  }, 100);
+};
+
 
   useEffect(() => {
     // Initialize session
@@ -28,29 +50,6 @@ export default function Home() {
           body: JSON.stringify({ sessionId: storedSessionId })
         });
         const data = await response.json();
-        const startNewChat = () => {
-        // Clear current conversation
-        setMessages([]);
-        setInput('');
-        setQuestionCount(0);
-  
-        // Generate new session ID
-        const newSessionId = Math.random().toString(36).substring(2) + Date.now().toString(36);
-        localStorage.setItem('pg_session_id', newSessionId);
-        setSessionId(newSessionId);
-  
-        // Show welcome message
-        setMessages([{
-        id: Date.now().toString(),
-        type: 'bot',
-        content: "👋 Welcome to PurpleGiraffe! I'm your AI monetization expert. Ask me anything about app monetization, ad networks, eCPM optimization, or revenue strategies."
-  }]);
-  
-  // Hide sidebar if you want
-  // setShowSidebar(false);
-};
-
-
         
         setQuestionCount(data.questionCount);
       } catch (error) {
