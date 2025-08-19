@@ -2,8 +2,11 @@
 'use client';
 import { useState } from 'react';
 
-export default function PricingTiers({ user, currentTier = 'free' }) {
+export default function PricingTiers({ user, currentTier = 'limited' }) {
   const [selectedTier, setSelectedTier] = useState(null);
+
+  // Determine actual tier - if no user or not logged in, they're on limited plan
+  const actualTier = user ? (currentTier || 'free') : 'limited';
 
   const tiers = [
     {
@@ -12,6 +15,7 @@ export default function PricingTiers({ user, currentTier = 'free' }) {
       price: 'FREE',
       period: 'forever',
       icon: '🎯',
+      requiresSignup: true,
       features: [
         'Unlimited debugging questions',
         'Community access & knowledge sharing',
@@ -19,9 +23,9 @@ export default function PricingTiers({ user, currentTier = 'free' }) {
         'Basic AI assistance 24/7',
         'Member badge'
       ],
-      buttonText: 'Current Plan',
-      buttonClass: 'secondary',
-      disabled: currentTier === 'free'
+      buttonText: actualTier === 'free' ? 'Current Plan' : (user ? 'Switch to Free' : 'Sign Up Free'),
+      buttonClass: actualTier === 'free' ? 'secondary' : 'primary',
+      disabled: actualTier === 'free'
     },
     {
       id: 'pro',
@@ -30,6 +34,7 @@ export default function PricingTiers({ user, currentTier = 'free' }) {
       period: '/month',
       icon: '💜',
       badge: 'MOST POPULAR',
+      requiresSignup: true,
       features: [
         'Everything in Community',
         'Screenshot & file upload analysis',
@@ -38,9 +43,9 @@ export default function PricingTiers({ user, currentTier = 'free' }) {
         'Custom optimization reports',
         '3x faster priority responses'
       ],
-      buttonText: currentTier === 'pro' ? 'Current Plan' : 'Upgrade to Pro',
+      buttonText: actualTier === 'pro' ? 'Current Plan' : 'Upgrade to Pro',
       buttonClass: 'primary',
-      disabled: currentTier === 'pro'
+      disabled: actualTier === 'pro'
     },
     {
       id: 'elite',
@@ -48,6 +53,7 @@ export default function PricingTiers({ user, currentTier = 'free' }) {
       price: '$149',
       period: '/month',
       icon: '💎',
+      requiresSignup: true,
       features: [
         'Everything in Pro',
         '10 hours monthly expert consultation',
@@ -56,18 +62,19 @@ export default function PricingTiers({ user, currentTier = 'free' }) {
         'Monthly 1-on-1 strategy sessions',
         'VIP community access'
       ],
-      buttonText: currentTier === 'elite' ? 'Current Plan' : 'Become Elite',
+      buttonText: actualTier === 'elite' ? 'Current Plan' : 'Become Elite',
       buttonClass: 'primary gradient',
-      disabled: currentTier === 'elite'
+      disabled: actualTier === 'elite'
     }
   ];
 
   const handleUpgrade = (tierId) => {
-    if (tierId === currentTier) return;
+    if (tierId === actualTier) return;
     
-    // For now, just show alert - we'll implement actual upgrade logic later
+    // If user is not logged in, prompt to sign up
     if (!user) {
-      alert('Please sign up or login to upgrade your plan');
+      alert('Please sign up or login to unlock unlimited access and premium features');
+      // In production, this would trigger the auth modal
       return;
     }
     
@@ -84,26 +91,34 @@ export default function PricingTiers({ user, currentTier = 'free' }) {
         </h3>
         
         {/* Current Plan Status */}
-        {user && (
-          <div className="current-plan-status">
-            <div className="plan-status-header">
-              <span className="status-label">Your Current Plan</span>
-              <span className="status-value">{tiers.find(t => t.id === currentTier)?.name}</span>
-            </div>
-            {currentTier === 'free' && (
-              <div className="upgrade-prompt">
-                <span>🎯 Unlock premium features for better monetization insights</span>
-              </div>
-            )}
+        <div className="current-plan-status">
+          <div className="plan-status-header">
+            <span className="status-label">Your Current Plan</span>
+            <span className="status-value">
+              {actualTier === 'limited' ? '⚠️ Limited (10 questions)' : 
+               actualTier === 'free' ? '✅ Community Member' :
+               actualTier === 'pro' ? '💜 Pro Optimizer' :
+               actualTier === 'elite' ? '💎 Elite Partner' : 'Unknown'}
+            </span>
           </div>
-        )}
+          {actualTier === 'limited' && (
+            <div className="upgrade-prompt" style={{ color: '#EF4444' }}>
+              <span>🔒 Sign up to unlock unlimited questions and premium features!</span>
+            </div>
+          )}
+          {actualTier === 'free' && (
+            <div className="upgrade-prompt">
+              <span>🎯 Upgrade to Pro for advanced monetization insights</span>
+            </div>
+          )}
+        </div>
 
         {/* Tier Cards */}
         <div className="tier-cards">
           {tiers.map((tier) => (
             <div 
               key={tier.id} 
-              className={`pricing-card ${tier.id === 'pro' ? 'premium' : ''} ${currentTier === tier.id ? 'current' : ''}`}
+              className={`pricing-card ${tier.id === 'pro' ? 'premium' : ''} ${actualTier === tier.id ? 'current' : ''}`}
             >
               {tier.badge && <span className="card-badge">{tier.badge}</span>}
               
@@ -137,6 +152,17 @@ export default function PricingTiers({ user, currentTier = 'free' }) {
             </div>
           ))}
         </div>
+
+        {/* Limited Plan Warning */}
+        {actualTier === 'limited' && (
+          <div className="limited-warning">
+            <div className="warning-card">
+              <h5>⚠️ Limited Access</h5>
+              <p>You're currently on the limited plan with only 10 questions.</p>
+              <p><strong>Sign up now</strong> to unlock unlimited access starting with our free Community Member tier!</p>
+            </div>
+          </div>
+        )}
 
         {/* Contact for Enterprise */}
         <div className="enterprise-contact">
@@ -201,6 +227,42 @@ export default function PricingTiers({ user, currentTier = 'free' }) {
         .pricing-card.current {
           border-color: var(--success-green);
           background: linear-gradient(to bottom, rgba(16, 185, 129, 0.05), var(--bg-primary));
+        }
+
+        .limited-warning {
+          margin: 1.5rem 0;
+          animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.8; }
+        }
+
+        .warning-card {
+          background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05));
+          border: 1px solid #EF4444;
+          border-radius: 0.75rem;
+          padding: 1.25rem;
+          text-align: center;
+        }
+
+        .warning-card h5 {
+          font-size: 1rem;
+          font-weight: 600;
+          margin-bottom: 0.5rem;
+          color: #DC2626;
+        }
+
+        .warning-card p {
+          font-size: 0.813rem;
+          color: var(--text-secondary);
+          margin-bottom: 0.5rem;
+          line-height: 1.5;
+        }
+
+        .warning-card strong {
+          color: var(--text-primary);
         }
 
         .enterprise-contact {
