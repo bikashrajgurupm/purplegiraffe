@@ -480,7 +480,7 @@ export default function Home() {
           />
         </aside>
       )}
-
+      </div> 
       {/* Auth Modal */}
       {showAuthModal && (
         <div className="modal-overlay" onClick={(e) => {
