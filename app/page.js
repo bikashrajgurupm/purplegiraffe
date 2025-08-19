@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import PricingTiers from './components/PricingTiers';
 import './globals.css';
 
 export default function Home() {
@@ -470,12 +471,15 @@ export default function Home() {
         </main>
 
         {/* Pricing Sidebar - existing code */}
-        {showSidebar && (
-          <aside className="pricing-sidebar">
-            {/* Your existing sidebar content */}
+       {/* Pricing Sidebar */}
+            {showSidebar && (
+            <aside className="pricing-sidebar">
+             <PricingTiers 
+            user={user} 
+            currentTier={user?.tier || 'free'} 
+            />
           </aside>
         )}
-      </div>
 
       {/* Auth Modal */}
       {showAuthModal && (
