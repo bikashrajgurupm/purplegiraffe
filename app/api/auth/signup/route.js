@@ -9,7 +9,7 @@ const supabase = createClient(
 );
 
 async function sendVerificationEmail(email, token) {
-  const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/verify?token=${token}`;
+ const verificationLink = `https://purplegiraffe.in/api/auth/verify?token=${token}`;
   
   // Always log the link for debugging
   console.log('================================');
