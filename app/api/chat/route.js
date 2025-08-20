@@ -171,7 +171,17 @@ export async function POST(request) {
     let aiResponse = '';
     if (lastMessage.content[0].type === 'text') {
       aiResponse = lastMessage.content[0].text.value;
+
+      // REMOVE ALL MARKDOWN FORMATTING
+      aiResponse = aiResponse
+    .replace(/\*\*(.*?)\*\*/g, '$1')  // Remove **bold**
+    .replace(/\*(.*?)\*/g, '$1')      // Remove *italic*
+    .replace(/#{1,6}\s/g, '')         // Remove # headers
+    .replace(/`{1,3}(.*?)`{1,3}/g, '$1') // Remove `code`
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1'); // Remove [links](url)
     }
+
+    
 
     // Store question and answer in database
     await supabase
