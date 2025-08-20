@@ -1,5 +1,5 @@
 export const metadata = {
-  title: 'PurpleGiraffe - AI Monetization Assistant',
+  title: 'Purple Giraffe - AI Monetization Assistant',
   description: 'Expert AI assistant for app monetization, ad networks, and revenue optimization',
 }
 
