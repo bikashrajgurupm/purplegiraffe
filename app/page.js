@@ -15,6 +15,8 @@ export default function Home() {
   const [user, setUser] = useState(null);
   const [isBlocked, setIsBlocked] = useState(false);
   const [showVerificationMessage, setShowVerificationMessage] = useState(false);
+  const [showMobilePricing, setShowMobilePricing] = useState(false); // ADD THIS
+  const [isMobile, setIsMobile] = useState(false); // ADD THIS
   const messagesEndRef = useRef(null);
 
   // Auth form states
@@ -25,6 +27,21 @@ export default function Home() {
 
   // Question limit
   const QUESTION_LIMIT = 10;
+
+  // ADD THIS - Check for mobile on mount and resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+      if (window.innerWidth <= 768) {
+        setShowSidebar(false);
+      }
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     // Check if user is logged in
@@ -39,64 +56,63 @@ export default function Home() {
       }
     }
 
-
-  // Handle verification redirect
-  const urlParams = new URLSearchParams(window.location.search);
-  const verified = urlParams.get('verified');
-  const email = urlParams.get('email');
-  const error = urlParams.get('error');
-  
-  if (verified === 'true' && email) {
-    // Show success message
-    const successMessage = {
-      id: Date.now().toString(),
-      type: 'bot',
-      content: `✅ Email verified successfully! You can now log in with ${decodeURIComponent(email)} to access unlimited questions as a Community Member.`
-    };
-    setMessages([successMessage]);
+    // Handle verification redirect
+    const urlParams = new URLSearchParams(window.location.search);
+    const verified = urlParams.get('verified');
+    const email = urlParams.get('email');
+    const error = urlParams.get('error');
     
-    // Show login modal
-    setAuthMode('login');
-    setShowAuthModal(true);
-    setAuthEmail(decodeURIComponent(email)); // Pre-fill email
-    
-    // Clean URL
-    window.history.replaceState({}, document.title, window.location.pathname);
-  }
-  
-  if (error) {
-    let errorMessage = '';
-    switch(error) {
-      case 'invalid-token':
-        errorMessage = '❌ Invalid verification link. Please sign up again.';
-        break;
-      case 'token-expired':
-        errorMessage = '❌ Verification link expired. Please sign up again to receive a new link.';
-        break;
-      case 'already-verified':
-        errorMessage = '✅ Email already verified. Please log in.';
-        setAuthMode('login');
-        setShowAuthModal(true);
-        break;
-      case 'verification-failed':
-        errorMessage = '❌ Verification failed. Please try again or contact support.';
-        break;
-      default:
-        errorMessage = '❌ An error occurred. Please try again.';
-    }
-    
-    if (errorMessage) {
-      const message = {
+    if (verified === 'true' && email) {
+      // Show success message
+      const successMessage = {
         id: Date.now().toString(),
         type: 'bot',
-        content: errorMessage
+        content: `✅ Email verified successfully! You can now log in with ${decodeURIComponent(email)} to access unlimited questions as a Community Member.`
       };
-      setMessages([message]);
+      setMessages([successMessage]);
+      
+      // Show login modal
+      setAuthMode('login');
+      setShowAuthModal(true);
+      setAuthEmail(decodeURIComponent(email)); // Pre-fill email
+      
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
     
-    // Clean URL
-    window.history.replaceState({}, document.title, window.location.pathname);
-  }
+    if (error) {
+      let errorMessage = '';
+      switch(error) {
+        case 'invalid-token':
+          errorMessage = '❌ Invalid verification link. Please sign up again.';
+          break;
+        case 'token-expired':
+          errorMessage = '❌ Verification link expired. Please sign up again to receive a new link.';
+          break;
+        case 'already-verified':
+          errorMessage = '✅ Email already verified. Please log in.';
+          setAuthMode('login');
+          setShowAuthModal(true);
+          break;
+        case 'verification-failed':
+          errorMessage = '❌ Verification failed. Please try again or contact support.';
+          break;
+        default:
+          errorMessage = '❌ An error occurred. Please try again.';
+      }
+      
+      if (errorMessage) {
+        const message = {
+          id: Date.now().toString(),
+          type: 'bot',
+          content: errorMessage
+        };
+        setMessages([message]);
+      }
+      
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
 
     // Initialize session
     const initSession = async () => {
@@ -361,7 +377,7 @@ export default function Home() {
         <div className="header-content">
           <div className="logo">
             <img src="/logo.png" alt="PurpleGiraffe" style={{width: '32px', height: '32px'}} />
-            <h1>PurpleGiraffe</h1>
+            <h1>Purple Giraffe</h1>
           </div>
           <div className="header-actions">
             {user ? (
@@ -379,16 +395,31 @@ export default function Home() {
                 Login
               </button>
             )}
-            <button 
-              className="toggle-sidebar-btn"
-              onClick={() => setShowSidebar(!showSidebar)}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="3" y1="12" x2="21" y2="12"/>
-                <line x1="3" y1="6" x2="21" y2="6"/>
-                <line x1="3" y1="18" x2="21" y2="18"/>
-              </svg>
-            </button>
+            
+            {/* Desktop toggle sidebar button */}
+            {!isMobile && (
+              <button 
+                className="toggle-sidebar-btn desktop-only"
+                onClick={() => setShowSidebar(!showSidebar)}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="3" y1="12" x2="21" y2="12"/>
+                  <line x1="3" y1="6" x2="21" y2="6"/>
+                  <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+              </button>
+            )}
+            
+            {/* Mobile pricing button */}
+            {isMobile && (
+              <button 
+                className="mobile-pricing-btn"
+                onClick={() => setShowMobilePricing(true)}
+              >
+                💰
+              </button>
+            )}
+            
             <button 
               className="new-chat-btn" 
               onClick={startNewChat}
@@ -398,7 +429,7 @@ export default function Home() {
                 <line x1="12" y1="5" x2="12" y2="19"/>
                 <line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
-              New Chat
+              <span className="new-chat-text">New Chat</span>
             </button>
           </div>
         </div>
@@ -529,17 +560,40 @@ export default function Home() {
           </div>
         </main>
 
-      
-       {/* Pricing Sidebar */}
-          {showSidebar && (
+        {/* Pricing Sidebar - Desktop Only */}
+        {showSidebar && !isMobile && (
           <aside className="pricing-sidebar">
             <PricingTiers 
-            user={user} 
-          currentTier={user?.tier || 'free'} 
-          />
-        </aside>
+              user={user} 
+              currentTier={user?.tier || 'free'} 
+            />
+          </aside>
+        )}
+      </div>
+      
+      {/* Mobile Pricing Modal */}
+      {showMobilePricing && isMobile && (
+        <div className="mobile-pricing-overlay" onClick={() => setShowMobilePricing(false)}>
+          <div className="mobile-pricing-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="mobile-pricing-header">
+              <h3>Choose Your Plan</h3>
+              <button 
+                className="mobile-pricing-close"
+                onClick={() => setShowMobilePricing(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="mobile-pricing-content">
+              <PricingTiers 
+                user={user} 
+                currentTier={user?.tier || 'free'} 
+              />
+            </div>
+          </div>
+        </div>
       )}
-      </div> 
+      
       {/* Auth Modal */}
       {showAuthModal && (
         <div className="modal-overlay" onClick={(e) => {
@@ -635,5 +689,3 @@ export default function Home() {
     </div>
   );
 }
-
-
