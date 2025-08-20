@@ -14,57 +14,67 @@ export default function PricingTiers({ user, currentTier = 'limited' }) {
       name: 'Community Member',
       price: 'FREE',
       period: 'forever',
-      icon: '🎯',
+      icon: '💚',
       requiresSignup: true,
       features: [
         'Unlimited debugging questions',
-        'Community access & knowledge sharing',
         'Weekly newsletter with trends',
-        'Basic AI assistance 24/7',
-        'Member badge'
+        "FAQ's and trending issues"
       ],
       buttonText: actualTier === 'free' ? 'Current Plan' : (user ? 'Switch to Free' : 'Sign Up Free'),
-      buttonClass: actualTier === 'free' ? 'secondary' : 'primary',
+      buttonClass: actualTier === 'free' ? 'current' : 'free',
       disabled: actualTier === 'free'
     },
     {
       id: 'pro',
       name: 'Pro Optimizer',
-      price: '$29',
+      price: '₹2,499',
       period: '/month',
       icon: '💜',
-      badge: 'MOST POPULAR',
+      badge: 'COMING SOON',
       requiresSignup: true,
       features: [
-        'Everything in Community',
         'Screenshot & file upload analysis',
         'Full chat history preservation',
         'Expert knowledge base access',
-        'Custom optimization reports',
         '3x faster priority responses'
       ],
-      buttonText: actualTier === 'pro' ? 'Current Plan' : 'Upgrade to Pro',
-      buttonClass: 'primary',
-      disabled: actualTier === 'pro'
+      buttonText: 'Coming Soon',
+      buttonClass: 'disabled',
+      disabled: true
     },
     {
       id: 'elite',
       name: 'Elite Partner',
-      price: '$149',
+      price: '₹14,999',
       period: '/month',
       icon: '💎',
+      badge: 'COMING SOON',
       requiresSignup: true,
       features: [
-        'Everything in Pro',
-        '10 hours monthly expert consultation',
-        'Priority human support (2hr response)',
-        'Custom implementation assistance',
-        'Monthly 1-on-1 strategy sessions',
-        'VIP community access'
+        '40 hours monthly expert consultation',
+        'Priority human support (12hr response)',
+        'Custom implementation assistance'
       ],
-      buttonText: actualTier === 'elite' ? 'Current Plan' : 'Become Elite',
-      buttonClass: 'primary gradient',
-      disabled: actualTier === 'elite'
+      buttonText: 'Coming Soon',
+      buttonClass: 'disabled',
+      disabled: true
+    },
+    {
+      id: 'enterprise',
+      name: 'Enterprise',
+      price: 'Custom',
+      period: '',
+      icon: '🏢',
+      badge: 'COMING SOON',
+      features: [
+        'Unlimited consultations',
+        'Dedicated account manager',
+        'Custom AI training'
+      ],
+      buttonText: 'Contact Sales',
+      buttonClass: 'disabled',
+      disabled: true
     }
   ];
 
@@ -73,243 +83,290 @@ export default function PricingTiers({ user, currentTier = 'limited' }) {
     
     // If user is not logged in, prompt to sign up
     if (!user) {
-      alert('Please sign up or login to unlock unlimited access and premium features');
-      // In production, this would trigger the auth modal
+      alert('Please sign up or login to unlock unlimited access');
       return;
     }
     
     setSelectedTier(tierId);
-    alert(`Upgrade to ${tierId} tier - Payment integration coming soon!`);
+    if (tierId !== 'free') {
+      alert(`${tierId === 'enterprise' ? 'Enterprise' : 'Premium'} tiers coming soon!`);
+    }
   };
 
   return (
-    <div className="pricing-tiers-container">
-      <div className="sidebar-content">
-        <h3 className="sidebar-title">
-          <span style={{ marginRight: '8px' }}>🚀</span>
-          Upgrade Your Experience
-        </h3>
-        
-        {/* Current Plan Status */}
-        <div className="current-plan-status">
-          <div className="plan-status-header">
-            <span className="status-label">Your Current Plan</span>
-            <span className="status-value">
-              {actualTier === 'limited' ? '⚠️ Limited (10 questions)' : 
-               actualTier === 'free' ? '✅ Community Member' :
-               actualTier === 'pro' ? '💜 Pro Optimizer' :
-               actualTier === 'elite' ? '💎 Elite Partner' : 'Unknown'}
-            </span>
-          </div>
-          {actualTier === 'limited' && (
-            <div className="upgrade-prompt" style={{ color: '#EF4444' }}>
-              <span>🔒 Sign up to unlock unlimited questions and premium features!</span>
-            </div>
-          )}
-          {actualTier === 'free' && (
-            <div className="upgrade-prompt">
-              <span>🎯 Upgrade to Pro for advanced monetization insights</span>
-            </div>
-          )}
-        </div>
-
-        {/* Tier Cards */}
-        <div className="tier-cards">
-          {tiers.map((tier) => (
-            <div 
-              key={tier.id} 
-              className={`pricing-card ${tier.id === 'pro' ? 'premium' : ''} ${actualTier === tier.id ? 'current' : ''}`}
-            >
-              {tier.badge && <span className="card-badge">{tier.badge}</span>}
-              
-              <div className="card-header">
-                <div className="card-icon">{tier.icon}</div>
-                <h4>{tier.name}</h4>
-                <div className="price">
-                  <span className="amount">{tier.price}</span>
-                  <span className="period">{tier.period}</span>
-                </div>
-              </div>
-
-              <ul className="features-list">
-                {tier.features.map((feature, index) => (
-                  <li key={index}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <button
-                className={`upgrade-btn ${tier.buttonClass}`}
-                onClick={() => handleUpgrade(tier.id)}
-                disabled={tier.disabled}
-              >
-                {tier.buttonText}
-              </button>
-            </div>
-          ))}
-        </div>
-
-        {/* Limited Plan Warning */}
+    <div className="pricing-container">
+      <div className="pricing-header">
+        <h3 className="pricing-title">Choose Your Plan</h3>
         {actualTier === 'limited' && (
-          <div className="limited-warning">
-            <div className="warning-card">
-              <h5>⚠️ Limited Access</h5>
-              <p>You're currently on the limited plan with only 10 questions.</p>
-              <p><strong>Sign up now</strong> to unlock unlimited access starting with our free Community Member tier!</p>
-            </div>
+          <div className="limited-alert">
+            ⚠️ <span>10 questions limit - Sign up for unlimited!</span>
           </div>
         )}
+      </div>
 
-        {/* Contact for Enterprise */}
-        <div className="enterprise-contact">
-          <div className="contact-card">
-            <h5>🏢 Need Enterprise?</h5>
-            <p>Custom solutions for large teams</p>
-            <a href="mailto:enterprise@purplegiraffe.ai" className="contact-link">
-              Contact Sales →
-            </a>
+      <div className="tiers-grid">
+        {tiers.map((tier) => (
+          <div 
+            key={tier.id} 
+            className={`tier-card ${actualTier === tier.id ? 'current' : ''} ${tier.id === 'enterprise' ? 'enterprise' : ''}`}
+          >
+            {tier.badge && <span className="tier-badge">{tier.badge}</span>}
+            
+            <div className="tier-header">
+              <span className="tier-icon">{tier.icon}</span>
+              <div className="tier-info">
+                <div className="tier-name">{tier.name}</div>
+                <div className="tier-price">
+                  {tier.price}
+                  {tier.period && <span className="tier-period">{tier.period}</span>}
+                </div>
+              </div>
+            </div>
+
+            <ul className="tier-features">
+              {tier.features.map((feature, index) => (
+                <li key={index}>
+                  <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" />
+                  </svg>
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+
+            <button
+              className={`tier-button ${tier.buttonClass}`}
+              onClick={() => handleUpgrade(tier.id)}
+              disabled={tier.disabled}
+            >
+              {tier.buttonText}
+            </button>
           </div>
-        </div>
+        ))}
       </div>
 
       <style jsx>{`
-        .pricing-tiers-container {
-          height: 100%;
-          overflow-y: auto;
-        }
-
-        .current-plan-status {
-          background: var(--bg-secondary);
-          border-radius: 0.75rem;
+        .pricing-container {
           padding: 1rem;
-          margin-bottom: 1.5rem;
-          border: 1px solid var(--border-color);
-        }
-
-        .plan-status-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 0.5rem;
-        }
-
-        .status-label {
-          font-size: 0.75rem;
-          color: var(--text-secondary);
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .status-value {
-          font-size: 0.875rem;
-          font-weight: 600;
-          color: var(--primary-purple);
-        }
-
-        .upgrade-prompt {
-          font-size: 0.813rem;
-          color: var(--text-secondary);
-          margin-top: 0.5rem;
-          padding-top: 0.5rem;
-          border-top: 1px solid var(--border-color);
-        }
-
-        .tier-cards {
+          height: 100%;
           display: flex;
           flex-direction: column;
-          gap: 1rem;
+          background: var(--bg-primary);
         }
 
-        .pricing-card.current {
-          border-color: var(--success-green);
-          background: linear-gradient(to bottom, rgba(16, 185, 129, 0.05), var(--bg-primary));
-        }
-
-        .limited-warning {
-          margin: 1.5rem 0;
-          animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.8; }
-        }
-
-        .warning-card {
-          background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05));
-          border: 1px solid #EF4444;
-          border-radius: 0.75rem;
-          padding: 1.25rem;
-          text-align: center;
-        }
-
-        .warning-card h5 {
-          font-size: 1rem;
-          font-weight: 600;
-          margin-bottom: 0.5rem;
-          color: #DC2626;
-        }
-
-        .warning-card p {
-          font-size: 0.813rem;
-          color: var(--text-secondary);
-          margin-bottom: 0.5rem;
-          line-height: 1.5;
-        }
-
-        .warning-card strong {
-          color: var(--text-primary);
-        }
-
-        .enterprise-contact {
-          margin-top: 2rem;
-          padding-top: 2rem;
-          border-top: 1px solid var(--border-color);
-        }
-
-        .contact-card {
-          background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(107, 70, 193, 0.05));
-          border: 1px solid var(--primary-purple);
-          border-radius: 0.75rem;
-          padding: 1.25rem;
-          text-align: center;
-        }
-
-        .contact-card h5 {
-          font-size: 1rem;
-          font-weight: 600;
-          margin-bottom: 0.5rem;
-          color: var(--text-primary);
-        }
-
-        .contact-card p {
-          font-size: 0.813rem;
-          color: var(--text-secondary);
+        .pricing-header {
           margin-bottom: 1rem;
         }
 
-        .contact-link {
-          display: inline-block;
-          color: var(--primary-purple);
+        .pricing-title {
+          font-size: 1.125rem;
           font-weight: 600;
+          color: var(--text-primary);
+          margin-bottom: 0.5rem;
+        }
+
+        .limited-alert {
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.3);
+          border-radius: 6px;
+          padding: 0.5rem 0.75rem;
+          font-size: 0.75rem;
+          color: #ef4444;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .tiers-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 0.75rem;
+          flex: 1;
+          overflow-y: auto;
+        }
+
+        .tier-card {
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          border-radius: 8px;
+          padding: 0.875rem;
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          transition: all 0.2s;
+        }
+
+        .tier-card:hover {
+          border-color: var(--primary-purple);
+          transform: translateY(-2px);
+        }
+
+        .tier-card.current {
+          border-color: #10b981;
+          background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), var(--bg-secondary));
+        }
+
+        .tier-card.enterprise {
+          background: linear-gradient(135deg, rgba(249, 115, 22, 0.05), var(--bg-secondary));
+        }
+
+        .tier-badge {
+          position: absolute;
+          top: 0.5rem;
+          right: 0.5rem;
+          background: rgba(139, 92, 246, 0.2);
+          color: var(--primary-purple);
+          padding: 0.125rem 0.375rem;
+          border-radius: 4px;
+          font-size: 0.5rem;
+          font-weight: 600;
+          letter-spacing: 0.5px;
+        }
+
+        .tier-header {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.625rem;
+          margin-bottom: 0.75rem;
+        }
+
+        .tier-icon {
+          font-size: 1.25rem;
+          line-height: 1;
+        }
+
+        .tier-info {
+          flex: 1;
+        }
+
+        .tier-name {
           font-size: 0.875rem;
-          text-decoration: none;
-          transition: transform 0.2s;
+          font-weight: 600;
+          color: var(--text-primary);
+          line-height: 1.2;
+          margin-bottom: 0.25rem;
         }
 
-        .contact-link:hover {
-          transform: translateX(4px);
+        .tier-price {
+          font-size: 1.125rem;
+          font-weight: 700;
+          color: var(--text-primary);
+          display: flex;
+          align-items: baseline;
+          gap: 0.25rem;
         }
 
-        /* Responsive adjustments */
-        @media (max-width: 1400px) {
-          .pricing-card .features-list {
-            font-size: 0.813rem;
+        .tier-period {
+          font-size: 0.75rem;
+          color: var(--text-secondary);
+          font-weight: 400;
+        }
+
+        .tier-features {
+          list-style: none;
+          padding: 0;
+          margin: 0 0 0.875rem 0;
+          flex: 1;
+        }
+
+        .tier-features li {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.375rem;
+          font-size: 0.6875rem;
+          color: var(--text-secondary);
+          line-height: 1.3;
+          margin-bottom: 0.375rem;
+        }
+
+        .tier-features li:last-child {
+          margin-bottom: 0;
+        }
+
+        .tier-features svg {
+          color: #10b981;
+          flex-shrink: 0;
+          margin-top: 0.125rem;
+        }
+
+        .tier-button {
+          width: 100%;
+          padding: 0.5rem;
+          border-radius: 6px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          border: none;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .tier-button.free {
+          background: #10b981;
+          color: white;
+        }
+
+        .tier-button.free:hover:not(:disabled) {
+          background: #059669;
+        }
+
+        .tier-button.current {
+          background: var(--bg-primary);
+          color: var(--text-secondary);
+          border: 1px solid var(--border-color);
+          cursor: default;
+        }
+
+        .tier-button.disabled {
+          background: var(--bg-primary);
+          color: var(--text-secondary);
+          border: 1px solid var(--border-color);
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        /* Responsive for very small heights */
+        @media (max-height: 700px) {
+          .pricing-container {
+            padding: 0.75rem;
           }
+          
+          .tiers-grid {
+            gap: 0.5rem;
+          }
+          
+          .tier-card {
+            padding: 0.75rem;
+          }
+          
+          .tier-features li {
+            font-size: 0.625rem;
+            margin-bottom: 0.25rem;
+          }
+        }
+
+        /* Single column for narrow sidebars */
+        @media (max-width: 400px) {
+          .tiers-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        /* Scrollbar styling */
+        .tiers-grid::-webkit-scrollbar {
+          width: 4px;
+        }
+
+        .tiers-grid::-webkit-scrollbar-track {
+          background: var(--bg-primary);
+        }
+
+        .tiers-grid::-webkit-scrollbar-thumb {
+          background: var(--border-color);
+          border-radius: 2px;
+        }
+
+        .tiers-grid::-webkit-scrollbar-thumb:hover {
+          background: var(--text-secondary);
         }
       `}</style>
     </div>
