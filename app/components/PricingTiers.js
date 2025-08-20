@@ -104,21 +104,21 @@ export default function PricingTiers({ user, currentTier = 'limited' }) {
         )}
       </div>
 
-      <div className="tiers-grid">
+      <div className="tiers-list">
         {tiers.map((tier) => (
           <div 
             key={tier.id} 
-            className={`tier-card ${actualTier === tier.id ? 'current' : ''} ${tier.id === 'enterprise' ? 'enterprise' : ''}`}
+            className={`tier-card ${actualTier === tier.id ? 'current' : ''}`}
           >
             {tier.badge && <span className="tier-badge">{tier.badge}</span>}
             
             <div className="tier-header">
               <span className="tier-icon">{tier.icon}</span>
               <div className="tier-info">
-                <div className="tier-name">{tier.name}</div>
+                <h4 className="tier-name">{tier.name}</h4>
                 <div className="tier-price">
-                  {tier.price}
-                  {tier.period && <span className="tier-period">{tier.period}</span>}
+                  <span className="price-amount">{tier.price}</span>
+                  {tier.period && <span className="price-period">{tier.period}</span>}
                 </div>
               </div>
             </div>
@@ -126,7 +126,7 @@ export default function PricingTiers({ user, currentTier = 'limited' }) {
             <ul className="tier-features">
               {tier.features.map((feature, index) => (
                 <li key={index}>
-                  <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" />
                   </svg>
                   <span>{feature}</span>
@@ -152,6 +152,7 @@ export default function PricingTiers({ user, currentTier = 'limited' }) {
           display: flex;
           flex-direction: column;
           background: var(--bg-primary);
+          overflow-y: auto;
         }
 
         .pricing-header {
@@ -162,7 +163,7 @@ export default function PricingTiers({ user, currentTier = 'limited' }) {
           font-size: 1.125rem;
           font-weight: 600;
           color: var(--text-primary);
-          margin-bottom: 0.5rem;
+          margin-bottom: 0.75rem;
         }
 
         .limited-alert {
@@ -175,30 +176,27 @@ export default function PricingTiers({ user, currentTier = 'limited' }) {
           display: flex;
           align-items: center;
           gap: 0.5rem;
+          margin-bottom: 0.5rem;
         }
 
-        .tiers-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
+        .tiers-list {
+          display: flex;
+          flex-direction: column;
           gap: 0.75rem;
-          flex: 1;
-          overflow-y: auto;
         }
 
         .tier-card {
           background: var(--bg-secondary);
           border: 1px solid var(--border-color);
-          border-radius: 8px;
-          padding: 0.875rem;
+          border-radius: 10px;
+          padding: 1rem;
           position: relative;
-          display: flex;
-          flex-direction: column;
           transition: all 0.2s;
         }
 
         .tier-card:hover {
           border-color: var(--primary-purple);
-          transform: translateY(-2px);
+          transform: translateX(2px);
         }
 
         .tier-card.current {
@@ -206,32 +204,28 @@ export default function PricingTiers({ user, currentTier = 'limited' }) {
           background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), var(--bg-secondary));
         }
 
-        .tier-card.enterprise {
-          background: linear-gradient(135deg, rgba(249, 115, 22, 0.05), var(--bg-secondary));
-        }
-
         .tier-badge {
           position: absolute;
-          top: 0.5rem;
-          right: 0.5rem;
-          background: rgba(139, 92, 246, 0.2);
+          top: 0.75rem;
+          right: 0.75rem;
+          background: rgba(139, 92, 246, 0.15);
           color: var(--primary-purple);
-          padding: 0.125rem 0.375rem;
+          padding: 0.125rem 0.5rem;
           border-radius: 4px;
-          font-size: 0.5rem;
+          font-size: 0.625rem;
           font-weight: 600;
           letter-spacing: 0.5px;
         }
 
         .tier-header {
           display: flex;
-          align-items: flex-start;
-          gap: 0.625rem;
+          align-items: center;
+          gap: 0.75rem;
           margin-bottom: 0.75rem;
         }
 
         .tier-icon {
-          font-size: 1.25rem;
+          font-size: 1.5rem;
           line-height: 1;
         }
 
@@ -243,40 +237,41 @@ export default function PricingTiers({ user, currentTier = 'limited' }) {
           font-size: 0.875rem;
           font-weight: 600;
           color: var(--text-primary);
-          line-height: 1.2;
+          margin: 0;
           margin-bottom: 0.25rem;
         }
 
         .tier-price {
-          font-size: 1.125rem;
-          font-weight: 700;
-          color: var(--text-primary);
           display: flex;
           align-items: baseline;
           gap: 0.25rem;
         }
 
-        .tier-period {
+        .price-amount {
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: var(--text-primary);
+        }
+
+        .price-period {
           font-size: 0.75rem;
           color: var(--text-secondary);
-          font-weight: 400;
         }
 
         .tier-features {
           list-style: none;
           padding: 0;
-          margin: 0 0 0.875rem 0;
-          flex: 1;
+          margin: 0 0 1rem 0;
         }
 
         .tier-features li {
           display: flex;
           align-items: flex-start;
-          gap: 0.375rem;
-          font-size: 0.6875rem;
+          gap: 0.5rem;
+          font-size: 0.75rem;
           color: var(--text-secondary);
-          line-height: 1.3;
-          margin-bottom: 0.375rem;
+          line-height: 1.4;
+          margin-bottom: 0.5rem;
         }
 
         .tier-features li:last-child {
@@ -291,9 +286,9 @@ export default function PricingTiers({ user, currentTier = 'limited' }) {
 
         .tier-button {
           width: 100%;
-          padding: 0.5rem;
+          padding: 0.625rem;
           border-radius: 6px;
-          font-size: 0.75rem;
+          font-size: 0.813rem;
           font-weight: 600;
           border: none;
           cursor: pointer;
@@ -324,48 +319,49 @@ export default function PricingTiers({ user, currentTier = 'limited' }) {
           cursor: not-allowed;
         }
 
-        /* Responsive for very small heights */
+        /* Compact mode for smaller screens */
         @media (max-height: 700px) {
           .pricing-container {
             padding: 0.75rem;
           }
           
-          .tiers-grid {
-            gap: 0.5rem;
+          .tiers-list {
+            gap: 0.625rem;
           }
           
           .tier-card {
-            padding: 0.75rem;
+            padding: 0.875rem;
+          }
+          
+          .tier-header {
+            margin-bottom: 0.625rem;
+          }
+          
+          .tier-features {
+            margin-bottom: 0.75rem;
           }
           
           .tier-features li {
-            font-size: 0.625rem;
-            margin-bottom: 0.25rem;
-          }
-        }
-
-        /* Single column for narrow sidebars */
-        @media (max-width: 400px) {
-          .tiers-grid {
-            grid-template-columns: 1fr;
+            font-size: 0.7rem;
+            margin-bottom: 0.375rem;
           }
         }
 
         /* Scrollbar styling */
-        .tiers-grid::-webkit-scrollbar {
-          width: 4px;
+        .pricing-container::-webkit-scrollbar {
+          width: 6px;
         }
 
-        .tiers-grid::-webkit-scrollbar-track {
+        .pricing-container::-webkit-scrollbar-track {
           background: var(--bg-primary);
         }
 
-        .tiers-grid::-webkit-scrollbar-thumb {
+        .pricing-container::-webkit-scrollbar-thumb {
           background: var(--border-color);
-          border-radius: 2px;
+          border-radius: 3px;
         }
 
-        .tiers-grid::-webkit-scrollbar-thumb:hover {
+        .pricing-container::-webkit-scrollbar-thumb:hover {
           background: var(--text-secondary);
         }
       `}</style>
