@@ -24,7 +24,10 @@ async function sendVerificationEmail(email, token) {
       const resend = new Resend(process.env.RESEND_API_KEY);
       
       const { data, error } = await resend.emails.send({
-        from: 'PurpleGiraffe <onboarding@resend.dev>', // This is Resend's test domain
+        // ⬇️ CHANGE THIS LINE - Replace with your verified domain
+        from: 'PurpleGiraffe <noreply@send.purplegiraffe.in>',  // ← CHANGE HERE!
+        // OR use: from: 'PurpleGiraffe <hello@send.purplegiraffe.in>',
+        // OR if you set up root domain: from: 'PurpleGiraffe <noreply@purplegiraffe.in>',
         to: email,
         subject: '🦒 Verify your PurpleGiraffe account',
         html: `
