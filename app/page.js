@@ -39,6 +39,65 @@ export default function Home() {
       }
     }
 
+
+  // Handle verification redirect
+  const urlParams = new URLSearchParams(window.location.search);
+  const verified = urlParams.get('verified');
+  const email = urlParams.get('email');
+  const error = urlParams.get('error');
+  
+  if (verified === 'true' && email) {
+    // Show success message
+    const successMessage = {
+      id: Date.now().toString(),
+      type: 'bot',
+      content: `✅ Email verified successfully! You can now log in with ${decodeURIComponent(email)} to access unlimited questions as a Community Member.`
+    };
+    setMessages([successMessage]);
+    
+    // Show login modal
+    setAuthMode('login');
+    setShowAuthModal(true);
+    setAuthEmail(decodeURIComponent(email)); // Pre-fill email
+    
+    // Clean URL
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+  
+  if (error) {
+    let errorMessage = '';
+    switch(error) {
+      case 'invalid-token':
+        errorMessage = '❌ Invalid verification link. Please sign up again.';
+        break;
+      case 'token-expired':
+        errorMessage = '❌ Verification link expired. Please sign up again to receive a new link.';
+        break;
+      case 'already-verified':
+        errorMessage = '✅ Email already verified. Please log in.';
+        setAuthMode('login');
+        setShowAuthModal(true);
+        break;
+      case 'verification-failed':
+        errorMessage = '❌ Verification failed. Please try again or contact support.';
+        break;
+      default:
+        errorMessage = '❌ An error occurred. Please try again.';
+    }
+    
+    if (errorMessage) {
+      const message = {
+        id: Date.now().toString(),
+        type: 'bot',
+        content: errorMessage
+      };
+      setMessages([message]);
+    }
+    
+    // Clean URL
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+
     // Initialize session
     const initSession = async () => {
       let storedSessionId = localStorage.getItem('pg_session_id');
