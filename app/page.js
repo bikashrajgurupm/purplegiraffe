@@ -128,7 +128,7 @@ export default function Home() {
     };
 
     initSession();
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
