@@ -1,0 +1,21 @@
+{
+  "name": "Purple Giraffe",
+  "short_name": "PurpleGiraffe",
+  "description": "AI Monetization Assistant",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#8b5cf6",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
