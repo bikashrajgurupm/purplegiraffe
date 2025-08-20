@@ -923,3 +923,117 @@ body {
     font-size: 1rem;
   }
 }
+
+/* MOBILE RESPONSIVE STYLES - Add at the END of globals.css */
+
+/* Mobile breakpoint */
+@media screen and (max-width: 768px) {
+  /* Hide sidebar on mobile */
+  .pricing-sidebar {
+    display: none !important;
+  }
+
+  /* Main container full width */
+  .main-container {
+    flex-direction: column;
+  }
+
+  /* Chat takes full width */
+  .chat-container {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Adjust header */
+  .header-content {
+    padding: 0 1rem;
+  }
+
+  .logo h1 {
+    font-size: 1.25rem;
+  }
+
+  /* Hide user email on mobile */
+  .user-email {
+    display: none;
+  }
+
+  /* Smaller buttons */
+  .new-chat-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  /* Welcome screen adjustments */
+  .welcome-screen {
+    padding: 1rem;
+  }
+
+  .example-questions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .example-question {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  /* Message adjustments */
+  .messages {
+    padding: 1rem;
+    padding-bottom: 160px; /* Space for fixed input */
+  }
+
+  .message-content {
+    font-size: 0.9375rem;
+    max-width: 85%;
+  }
+
+  /* Fixed input at bottom */
+  .input-wrapper {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg-primary);
+    border-top: 1px solid var(--border-color);
+    padding: 1rem;
+    z-index: 100;
+  }
+
+  /* Input font size to prevent zoom */
+  .message-input,
+  .auth-input {
+    font-size: 16px !important;
+  }
+
+  /* Modal adjustments */
+  .auth-modal {
+    width: 90%;
+    margin: 1rem;
+  }
+}
+
+/* Tablet adjustments */
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+  .pricing-sidebar {
+    width: 280px;
+  }
+}
+
+/* Very small phones */
+@media screen and (max-width: 380px) {
+  .logo h1 {
+    display: none;
+  }
+  
+  .header-actions {
+    gap: 0.25rem;
+  }
+  
+  .new-chat-btn span {
+    display: none;
+  }
+}
