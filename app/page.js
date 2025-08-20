@@ -154,7 +154,7 @@ export default function Home() {
       setMessages([{
         id: Date.now().toString(),
         type: 'bot',
-        content: "👋 Welcome to PurpleGiraffe! I'm your AI monetization expert. Ask me anything about app monetization, ad networks, eCPM optimization, or revenue strategies."
+        content: "👋 Welcome to Purple Giraffe! I'm your AI monetization expert. Ask me anything about app monetization, ad networks, eCPM optimization, or revenue strategies."
       }]);
     }, 100);
   };
@@ -414,7 +414,7 @@ export default function Home() {
                 <div className="welcome-logo">
                   <img src="/logo.png" alt="PurpleGiraffe" style={{width: '80px', height: '80px'}} />
                 </div>
-                <h2 className="welcome-title">Welcome to PurpleGiraffe</h2>
+                <h2 className="welcome-title">Welcome to Purple Giraffe</h2>
                 <p className="welcome-subtitle">Your AI expert for app monetization</p>
                 
                 {!user && (
@@ -524,7 +524,7 @@ export default function Home() {
               </div>
             </form>
             <p className="input-footer">
-              PurpleGiraffe AI can make mistakes. Verify important information.
+              Purple Giraffe AI can make mistakes. Verify important information.
             </p>
           </div>
         </main>
