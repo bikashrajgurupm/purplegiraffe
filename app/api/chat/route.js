@@ -66,6 +66,79 @@ async function getUserFromToken(token) {
   }
 }
 
+// Helper function to determine if response is a real answer
+function isRealAnswer(aiResponse) {
+  // Patterns that indicate clarifying questions or errors
+  const clarifyingPatterns = [
+    // Questions asking for more info
+    /quick question/i,
+    /can you (tell|share|provide|clarify|specify)/i,
+    /what (exactly|specifically|kind of|type of)/i,
+    /which (network|platform|version|type)/i,
+    /how (much|long|many)/i,
+    /when did/i,
+    /are you (using|seeing|experiencing)/i,
+    /is this (happening|occurring|for)/i,
+    /do you (have|see|mean|use)/i,
+    /could you (provide|share|tell|clarify)/i,
+    /need (more|additional|some) (information|details|context)/i,
+    /before I can help/i,
+    /to give you the best advice/i,
+    /can you give me/i,
+    /let me know/i,
+    /what's your/i,
+    
+    // Error messages
+    /error|failed|sorry|apologize|couldn't|unable|problem|issue occurred/i,
+    /try again|something went wrong/i,
+    /cannot process/i,
+    /unavailable|not available/i
+  ];
+
+  // Check if response matches clarifying patterns
+  for (const pattern of clarifyingPatterns) {
+    if (pattern.test(aiResponse)) {
+      // Additional check: if it's very short, it's likely just a question
+      if (aiResponse.length < 200) {
+        return false;
+      }
+      // If it's longer, check if it has substantial content despite having a question
+      const questionMarks = (aiResponse.match(/\?/g) || []).length;
+      // If more than 2 question marks, likely a clarifying response
+      if (questionMarks > 2) {
+        return false;
+      }
+    }
+  }
+
+  // If response is very short (under 100 chars), it's likely an error or clarification
+  if (aiResponse.length < 100) {
+    return false;
+  }
+
+  // If response contains actionable advice or information, it's a real answer
+  const answerPatterns = [
+    /first thing|start by|begin with/i,
+    /here's what|this is|the (answer|solution|problem|issue)/i,
+    /you (should|can|need to|want to|could)/i,
+    /typically|usually|generally|often|commonly/i,
+    /the (best|recommended|optimal) (way|approach|method)/i,
+    /in my experience|I've (found|seen)|what works/i,
+    /eCPM|fill rate|revenue|monetization|ad network/i,
+    /check your|look at|examine|review|analyze/i
+  ];
+
+  // Check if response contains answer patterns
+  for (const pattern of answerPatterns) {
+    if (pattern.test(aiResponse)) {
+      return true;
+    }
+  }
+
+  // Default: if it's over 200 characters and doesn't match clarifying patterns, count it
+  return aiResponse.length > 200;
+}
+
 export async function POST(request) {
   try {
     const { message, sessionId } = await request.json();
@@ -115,7 +188,7 @@ export async function POST(request) {
       }
     }
 
-    // Check question limits for non-logged-in users
+    // Check question limits for non-logged-in users BEFORE processing
     if (!user && session.question_count >= QUESTION_LIMIT) {
       return Response.json({ 
         error: 'Question limit reached. Please sign up to continue.',
@@ -151,39 +224,81 @@ export async function POST(request) {
 
       if (runStatus.status === 'failed') {
         console.error('Run failed:', runStatus.last_error);
-        throw new Error(`Assistant failed: ${runStatus.last_error?.message || 'Unknown error'}`);
+        // Don't count failed responses
+        return Response.json({ 
+          response: 'Sorry, I encountered an error processing your request. Please try again.',
+          questionCount: session.question_count, // Don't increment
+          remainingQuestions: user ? 999 : Math.max(0, QUESTION_LIMIT - session.question_count),
+          isError: true
+        });
       }
       
       if (runStatus.status === 'cancelled' || runStatus.status === 'expired') {
-        throw new Error(`Run ${runStatus.status}`);
+        // Don't count cancelled/expired responses
+        return Response.json({ 
+          response: 'The request timed out. Please try again.',
+          questionCount: session.question_count, // Don't increment
+          remainingQuestions: user ? 999 : Math.max(0, QUESTION_LIMIT - session.question_count),
+          isError: true
+        });
       }
     }
 
     if (runStatus.status !== 'completed') {
-      throw new Error('Assistant took too long to respond');
+      // Don't count timeout responses
+      return Response.json({ 
+        response: 'The assistant took too long to respond. Please try again.',
+        questionCount: session.question_count, // Don't increment
+        remainingQuestions: user ? 999 : Math.max(0, QUESTION_LIMIT - session.question_count),
+        isError: true
+      });
     }
 
     // Get the assistant's response
     const messages = await openai.beta.threads.messages.list(threadId);
     const lastMessage = messages.data[0];
     
-    // Extract text from the response
+    // Extract text from the response and CLEAN MARKDOWN
     let aiResponse = '';
     if (lastMessage.content[0].type === 'text') {
       aiResponse = lastMessage.content[0].text.value;
-
-      // REMOVE ALL MARKDOWN FORMATTING
+      
+      // Strip all markdown formatting
       aiResponse = aiResponse
-    .replace(/\*\*(.*?)\*\*/g, '$1')  // Remove **bold**
-    .replace(/\*(.*?)\*/g, '$1')      // Remove *italic*
-    .replace(/#{1,6}\s/g, '')         // Remove # headers
-    .replace(/`{1,3}(.*?)`{1,3}/g, '$1') // Remove `code`
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1'); // Remove [links](url)
+        .replace(/\*\*(.*?)\*\*/g, '$1')
+        .replace(/__(.*?)__/g, '$1')
+        .replace(/\*(.*?)\*/g, '$1')
+        .replace(/_(.*?)_/g, '$1')
+        .replace(/^#{1,6}\s+/gm, '')
+        .replace(/`([^`]+)`/g, '$1')
+        .replace(/```[\s\S]*?```/g, '')
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+        .replace(/^[\-\*_]{3,}$/gm, '')
+        .replace(/^>\s+/gm, '')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
     }
 
+    // Determine if this is a real answer that should count
+    const shouldCount = !user && isRealAnswer(aiResponse); // Only count for non-logged users
     
+    // Only increment question count if it's a real answer
+    let newCount = session.question_count;
+    if (shouldCount) {
+      newCount = session.question_count + 1;
+      
+      // Update question count in database
+      await supabase
+        .from('sessions')
+        .update({ 
+          question_count: newCount,
+          thread_id: threadId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('session_id', sessionId);
+    }
 
-    // Store question and answer in database
+    // Store question and answer in database (always store, even if not counting)
     await supabase
       .from('questions')
       .insert([{
@@ -195,23 +310,11 @@ export async function POST(request) {
         created_at: new Date().toISOString()
       }]);
 
-    // Update question count and last activity
-    const newCount = (session?.question_count || 0) + 1;
-    await supabase
-      .from('sessions')
-      .update({ 
-        question_count: newCount,
-        thread_id: threadId,
-        updated_at: new Date().toISOString()
-      })
-      .eq('session_id', sessionId);
-
     // Calculate remaining questions
     let remainingQuestions = user ? 999 : Math.max(0, QUESTION_LIMIT - newCount);
 
     // Update chat history for logged-in users
     if (user) {
-      // Check if chat history exists for this session
       const { data: chatHistory } = await supabase
         .from('chat_history')
         .select('*')
@@ -220,7 +323,6 @@ export async function POST(request) {
         .single();
 
       if (chatHistory) {
-        // Update existing chat history
         await supabase
           .from('chat_history')
           .update({
@@ -230,7 +332,6 @@ export async function POST(request) {
           })
           .eq('id', chatHistory.id);
       } else {
-        // Create new chat history entry
         await supabase
           .from('chat_history')
           .insert([{
@@ -249,28 +350,25 @@ export async function POST(request) {
       response: aiResponse,
       questionCount: newCount,
       remainingQuestions,
-      threadId: threadId // Useful for debugging
+      wasCountedAsQuestion: shouldCount,
+      threadId: threadId
     });
 
   } catch (error) {
     console.error('Chat error:', error);
     
-    // More specific error messages
-    if (error.message?.includes('API key')) {
-      return Response.json({ 
-        error: 'Configuration error. Please contact support.'
-      }, { status: 500 });
-    }
-    
-    if (error.message?.includes('Assistant')) {
-      return Response.json({ 
-        error: 'AI assistant temporarily unavailable. Please try again.'
-      }, { status: 503 });
-    }
+    // Don't count errors toward the limit
+    const { data: session } = await supabase
+      .from('sessions')
+      .select('question_count')
+      .eq('session_id', sessionId)
+      .single();
     
     return Response.json({ 
-      error: 'Failed to process your message. Please try again.',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      response: 'Sorry, I encountered an error. Please try again.',
+      questionCount: session?.question_count || 0,
+      remainingQuestions: user ? 999 : Math.max(0, QUESTION_LIMIT - (session?.question_count || 0)),
+      isError: true
     }, { status: 500 });
   }
 }
