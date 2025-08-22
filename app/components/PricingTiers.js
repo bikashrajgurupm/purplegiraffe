@@ -1,8 +1,13 @@
-// components/PricingTiers.js
+// components/PricingTiers.js - Updated Version
 'use client';
 import { useState } from 'react';
 
-export default function PricingTiers({ user, currentTier = 'limited' }) {
+export default function PricingTiers({ 
+  user, 
+  currentTier = 'limited',
+  onSignupClick,  // New prop to handle signup modal
+  onLoginClick    // New prop to handle login modal
+}) {
   const [selectedTier, setSelectedTier] = useState(null);
 
   // Determine actual tier - if no user or not logged in, they're on limited plan
@@ -14,7 +19,7 @@ export default function PricingTiers({ user, currentTier = 'limited' }) {
       name: 'Community Member',
       price: 'FREE',
       period: 'forever',
-      icon: '💚',
+      icon: '🚀',
       requiresSignup: true,
       features: [
         'Unlimited debugging questions',
@@ -30,7 +35,7 @@ export default function PricingTiers({ user, currentTier = 'limited' }) {
       name: 'Pro Optimizer',
       price: '₹2,499',
       period: '/month',
-      icon: '💜',
+      icon: '⭐️',
       badge: 'COMING SOON',
       requiresSignup: true,
       features: [
@@ -81,9 +86,21 @@ export default function PricingTiers({ user, currentTier = 'limited' }) {
   const handleUpgrade = (tierId) => {
     if (tierId === actualTier) return;
     
-    // If user is not logged in, prompt to sign up
-    if (!user) {
-      alert('Please sign up or login to unlock unlimited access');
+    // If user is not logged in and trying to get free tier, open signup modal
+    if (!user && tierId === 'free') {
+      if (onSignupClick) {
+        onSignupClick();
+      } else {
+        // Fallback if prop not provided
+        alert('Please sign up or login to unlock unlimited access');
+      }
+      return;
+    }
+    
+    // If user is logged in but trying to switch to free
+    if (user && tierId === 'free') {
+      // Here you might want to handle downgrade logic
+      alert('You already have the Community Member plan!');
       return;
     }
     
