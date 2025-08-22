@@ -1,4 +1,4 @@
-//Deploy test
+//Deploy test - Fixed version
 
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
@@ -70,146 +70,136 @@ async function getUserFromToken(token) {
 
 // Helper function to determine if response is a real answer
 function isRealAnswer(aiResponse) {
-  // Normalize the response for checking
-  const normalizedResponse = aiResponse.toLowerCase();
+  console.log('=== CHECKING IF REAL ANSWER ===');
+  console.log('Response preview:', aiResponse.substring(0, 150));
   
-  // PRIORITY 1: Check for "I don't know" / "I can't find" / "Not in files" responses
-  // These should NEVER count as real answers
-  const noInfoPatterns = [
-    /couldn't find|could not find|can't find|cannot find/i,
-    /don't have (that |any |specific )?information/i,
-    /no (specific |relevant |available )?(information|data|details)/i,
-    /not (able to |able to find|sure|certain)/i,
-    /don't know|do not know/i,
-    /can't help with that|cannot help with that/i,
-    /don't have access|do not have access/i,
-    /unable to (find|locate|determine|identify)/i,
-    /not mentioned|wasn't mentioned|was not mentioned/i,
-    /didn't find|did not find/i,
-    /no mention of/i,
-    /files you uploaded/i,
-    /in the files/i,
-    /if you have any other questions/i,
-    /feel free to (ask|let me know)/i,
-    /is there anything else/i,
-    /let me know if/i,
-    /happy to help with/i,
-    /need assistance with something else/i
+  // Convert to lowercase for easier checking
+  const lowerResponse = aiResponse.toLowerCase();
+  
+  // BLOCK LIST - These phrases mean it's NOT a real answer
+  const blockPhrases = [
+    "couldn't find",
+    "could not find",
+    "can't find",
+    "cannot find",
+    "didn't find",
+    "did not find",
+    "unable to find",
+    "unable to locate",
+    "don't have that information",
+    "don't have access",
+    "no specific mention",
+    "not mentioned",
+    "files you uploaded",
+    "in the files",
+    "in your files",
+    "if you have any other questions",
+    "anything else",
+    "something else",
+    "need assistance with",
+    "happy to help with",
+    "let me know if",
+    "feel free to ask"
   ];
-
-  // If it contains ANY "no info" pattern, it's not a real answer
-  for (const pattern of noInfoPatterns) {
-    if (pattern.test(aiResponse)) {
-      return false; // Definitely not a real answer
-    }
-  }
-
-  // PRIORITY 2: Check for errors
-  const errorPatterns = [
-    /error|failed|sorry|apologize|couldn't|unable|problem occurred/i,
-    /try again|something went wrong/i,
-    /cannot process/i,
-    /unavailable|not available/i
-  ];
-
-  for (const pattern of errorPatterns) {
-    if (pattern.test(aiResponse)) {
+  
+  // Check if response contains any block phrases
+  for (const phrase of blockPhrases) {
+    if (lowerResponse.includes(phrase)) {
+      console.log(`BLOCKED: Contains "${phrase}" - NOT counting as answer`);
       return false;
     }
   }
-
-  // PRIORITY 3: Check for clarifying questions
-  const clarifyingPatterns = [
-    /to provide you with the best advice/i,
-    /could you please provide/i,
-    /can you (please )?(tell|share|provide|clarify|specify)/i,
-    /I'd like to know/i,
-    /I need to know/i,
-    /few key details/i,
-    /once you share this information/i,
-    /need (more|additional|some) (information|details|context)/i,
-    /before I can (help|provide|assist)/i,
-    /would be helpful to know/i,
-    /what (exactly|specifically|kind of|type of)/i,
-    /which (network|platform|version|type)/i,
-    /are you (using|seeing|experiencing)/i,
-    /quick question/i,
-    /let me know/i,
-    /what's your/i
-  ];
-
-  for (const pattern of clarifyingPatterns) {
-    if (pattern.test(aiResponse)) {
-      return false;
-    }
-  }
-
-  // PRIORITY 4: Check if it's primarily questions (numbered list of questions)
-  const numberedQuestions = /\d+\.\s+[^\n]*\?/g;
-  const numberedQuestionCount = (aiResponse.match(numberedQuestions) || []).length;
-  if (numberedQuestionCount >= 2) {
-    return false; // Multiple numbered questions = asking for info
-  }
-
-  // Count total question marks
-  const questionMarks = (aiResponse.match(/\?/g) || []).length;
-  if (questionMarks > 3) {
-    return false; // Too many questions to be a real answer
-  }
-
-  // PRIORITY 5: Check length - very short responses aren't real answers
-  if (aiResponse.length < 100) {
+  
+  // Check for error messages
+  if (lowerResponse.includes("error") || 
+      lowerResponse.includes("sorry") ||
+      lowerResponse.includes("apologize") ||
+      lowerResponse.includes("unable") ||
+      lowerResponse.includes("cannot") ||
+      lowerResponse.includes("can't")) {
+    console.log('BLOCKED: Error/apology message - NOT counting');
     return false;
   }
-
-  // PRIORITY 6: Must contain actual monetization advice to count
-  const monetizationTerms = [
-    /eCPM|CPM|fill rate|revenue|monetization/i,
-    /ad network|waterfall|mediation|impression/i,
-    /interstitial|banner|rewarded|native/i,
-    /AdMob|AppLovin|Unity|ironSource|Meta|Vungle/i,
-    /policy|violation|optimization|performance/i,
-    /\$\d+|€\d+|£\d+|₹\d+/,  // Money amounts
-    /\d+%/  // Percentages
+  
+  // Check for clarifying questions
+  const clarifyingPhrases = [
+    "can you tell",
+    "can you share",
+    "can you provide",
+    "could you please",
+    "could you tell",
+    "could you share",
+    "i'd like to know",
+    "i need to know",
+    "to provide you with",
+    "to give you the best",
+    "what exactly",
+    "what specifically",
+    "which network",
+    "which platform",
+    "are you using",
+    "are you seeing",
+    "do you have"
   ];
-
-  let hasMonetizationContent = false;
-  for (const pattern of monetizationTerms) {
-    if (pattern.test(aiResponse)) {
-      hasMonetizationContent = true;
-      break;
+  
+  for (const phrase of clarifyingPhrases) {
+    if (lowerResponse.includes(phrase)) {
+      console.log(`BLOCKED: Clarifying question "${phrase}" - NOT counting`);
+      return false;
     }
   }
-
-  // PRIORITY 7: Check for actionable advice
-  const actionablePatterns = [
-    /you (should|can|need to|want to|could)/i,
-    /first thing|start by|begin with/i,
-    /here's what|this is what/i,
-    /check your|look at|examine|review/i,
-    /try (to|this|updating|changing)/i,
-    /make sure|ensure that/i,
-    /typically|usually|generally|often/i,
-    /I've (found|seen)|in my experience/i,
-    /the (best|recommended|optimal) (way|approach|method)/i
-  ];
-
-  let hasActionableAdvice = false;
-  for (const pattern of actionablePatterns) {
-    if (pattern.test(aiResponse)) {
-      hasActionableAdvice = true;
-      break;
-    }
+  
+  // Check if too short
+  if (aiResponse.length < 100) {
+    console.log('BLOCKED: Too short (under 100 chars) - NOT counting');
+    return false;
   }
-
-  // Final decision: Only count if it has real content
-  // Must have EITHER actionable advice OR monetization content with sufficient length
-  if (hasActionableAdvice || (hasMonetizationContent && aiResponse.length > 200)) {
-    return true;
+  
+  // Count question marks
+  const questionMarks = (aiResponse.match(/\?/g) || []).length;
+  console.log('Question marks found:', questionMarks);
+  
+  // Too many questions = clarifying
+  if (questionMarks > 3) {
+    console.log('BLOCKED: Too many questions - NOT counting');
+    return false;
   }
-
-  // If it doesn't have monetization terms OR actionable advice, don't count it
-  return false;
+  
+  // Check for numbered questions (1. Question? 2. Question?)
+  const numberedQuestions = aiResponse.match(/\d+\.\s+[^\n]*\?/g) || [];
+  if (numberedQuestions.length >= 2) {
+    console.log('BLOCKED: Multiple numbered questions - NOT counting');
+    return false;
+  }
+  
+  // POSITIVE CHECK - Must have valuable content to count
+  const hasMonetizationContent = 
+    /eCPM|CPM|fill rate|revenue|monetization/i.test(aiResponse) ||
+    /ad network|waterfall|mediation|impression/i.test(aiResponse) ||
+    /interstitial|banner|rewarded|native/i.test(aiResponse) ||
+    /AdMob|AppLovin|Unity|ironSource/i.test(aiResponse) ||
+    /policy|violation|optimization/i.test(aiResponse);
+  
+  const hasActionableAdvice = 
+    /you should|you can|you need|you could/i.test(aiResponse) ||
+    /first thing|start by|begin with/i.test(aiResponse) ||
+    /check your|look at|examine|review/i.test(aiResponse) ||
+    /try to|try this|try updating/i.test(aiResponse) ||
+    /make sure|ensure that/i.test(aiResponse) ||
+    /typically|usually|generally|often/i.test(aiResponse);
+  
+  console.log('Has monetization content:', hasMonetizationContent);
+  console.log('Has actionable advice:', hasActionableAdvice);
+  
+  // Must have SOME value to count
+  if (!hasMonetizationContent && !hasActionableAdvice) {
+    console.log('BLOCKED: No valuable content found - NOT counting');
+    return false;
+  }
+  
+  // If we got here, it's a real answer
+  console.log('APPROVED: Real answer with value - COUNTING');
+  return true;
 }
 
 export async function POST(request) {
@@ -355,6 +345,8 @@ export async function POST(request) {
     // Determine if this is a real answer that should count
     const shouldCount = !user && isRealAnswer(aiResponse); // Only count for non-logged users
     
+    console.log('Final decision - should count?', shouldCount);
+    
     // Only increment question count if it's a real answer
     let newCount = session.question_count;
     if (shouldCount) {
@@ -430,17 +422,23 @@ export async function POST(request) {
   } catch (error) {
     console.error('Chat error:', error);
     
-    // Don't count errors toward the limit
-    const { data: session } = await supabase
-      .from('sessions')
-      .select('question_count')
-      .eq('session_id', sessionId)
-      .single();
+    // Try to get session for proper count
+    let sessionCount = 0;
+    try {
+      const { data: session } = await supabase
+        .from('sessions')
+        .select('question_count')
+        .eq('session_id', sessionId)
+        .single();
+      sessionCount = session?.question_count || 0;
+    } catch (e) {
+      console.error('Could not get session count:', e);
+    }
     
     return Response.json({ 
       response: 'Sorry, I encountered an error. Please try again.',
-      questionCount: session?.question_count || 0,
-      remainingQuestions: user ? 999 : Math.max(0, QUESTION_LIMIT - (session?.question_count || 0)),
+      questionCount: sessionCount,
+      remainingQuestions: user ? 999 : Math.max(0, QUESTION_LIMIT - sessionCount),
       isError: true
     }, { status: 500 });
   }
