@@ -69,137 +69,121 @@ async function getUserFromToken(token) {
 }
 
 // Helper function to determine if response is a real answer
+// Helper function to determine if response is a real answer
 function isRealAnswer(aiResponse) {
   console.log('=== CHECKING IF REAL ANSWER ===');
-  console.log('Response preview:', aiResponse.substring(0, 150));
+  console.log('Response length:', aiResponse.length);
+  console.log('First 200 chars:', aiResponse.substring(0, 200));
   
-  // Convert to lowercase for easier checking
+  // Convert to lowercase for checking
   const lowerResponse = aiResponse.toLowerCase();
   
-  // BLOCK LIST - These phrases mean it's NOT a real answer
-  const blockPhrases = [
+  // PRIORITY 1: Definitely NOT real answers - these specific phrases
+  const definitelyNotAnswers = [
     "couldn't find",
     "could not find",
     "can't find",
     "cannot find",
     "didn't find",
-    "did not find",
     "unable to find",
-    "unable to locate",
-    "don't have that information",
-    "don't have access",
     "no specific mention",
     "not mentioned",
     "files you uploaded",
     "in the files",
-    "in your files",
-    "if you have any other questions",
-    "anything else",
-    "something else",
-    "need assistance with",
-    "happy to help with",
-    "let me know if",
-    "feel free to ask"
+    "don't have that information",
+    "don't have access"
   ];
   
-  // Check if response contains any block phrases
-  for (const phrase of blockPhrases) {
+  // Check for "I don't know" type responses
+  for (const phrase of definitelyNotAnswers) {
     if (lowerResponse.includes(phrase)) {
-      console.log(`BLOCKED: Contains "${phrase}" - NOT counting as answer`);
+      console.log(`BLOCKED: Contains "${phrase}" - NOT counting`);
       return false;
     }
   }
   
-  // Check for error messages
-  if (lowerResponse.includes("error") || 
-      lowerResponse.includes("sorry") ||
-      lowerResponse.includes("apologize") ||
-      lowerResponse.includes("unable") ||
-      lowerResponse.includes("cannot") ||
-      lowerResponse.includes("can't")) {
-    console.log('BLOCKED: Error/apology message - NOT counting');
+  // PRIORITY 2: Check if it's just an error
+  if (lowerResponse.includes("error") && lowerResponse.includes("try again")) {
+    console.log('BLOCKED: Error message - NOT counting');
     return false;
   }
   
-  // Check for clarifying questions
-  const clarifyingPhrases = [
-    "can you tell",
-    "can you share",
-    "can you provide",
-    "could you please",
-    "could you tell",
-    "could you share",
-    "i'd like to know",
-    "i need to know",
-    "to provide you with",
-    "to give you the best",
-    "what exactly",
-    "what specifically",
-    "which network",
-    "which platform",
-    "are you using",
-    "are you seeing",
-    "do you have"
-  ];
-  
-  for (const phrase of clarifyingPhrases) {
-    if (lowerResponse.includes(phrase)) {
-      console.log(`BLOCKED: Clarifying question "${phrase}" - NOT counting`);
-      return false;
-    }
-  }
-  
-  // Check if too short
-  if (aiResponse.length < 100) {
-    console.log('BLOCKED: Too short (under 100 chars) - NOT counting');
+  // PRIORITY 3: Check if too short (under 50 chars is definitely not helpful)
+  if (aiResponse.length < 50) {
+    console.log('BLOCKED: Too short (under 50 chars) - NOT counting');
     return false;
   }
   
-  // Count question marks
+  // PRIORITY 4: Check if it's ONLY questions (no advice)
+  // Count question marks and check for numbered questions
   const questionMarks = (aiResponse.match(/\?/g) || []).length;
-  console.log('Question marks found:', questionMarks);
-  
-  // Too many questions = clarifying
-  if (questionMarks > 3) {
-    console.log('BLOCKED: Too many questions - NOT counting');
-    return false;
-  }
-  
-  // Check for numbered questions (1. Question? 2. Question?)
   const numberedQuestions = aiResponse.match(/\d+\.\s+[^\n]*\?/g) || [];
-  if (numberedQuestions.length >= 2) {
-    console.log('BLOCKED: Multiple numbered questions - NOT counting');
+  
+  // If it has 3+ numbered questions, it's probably asking for info
+  if (numberedQuestions.length >= 3) {
+    console.log('BLOCKED: Too many numbered questions - NOT counting');
     return false;
   }
   
-  // POSITIVE CHECK - Must have valuable content to count
-  const hasMonetizationContent = 
-    /eCPM|CPM|fill rate|revenue|monetization/i.test(aiResponse) ||
-    /ad network|waterfall|mediation|impression/i.test(aiResponse) ||
-    /interstitial|banner|rewarded|native/i.test(aiResponse) ||
-    /AdMob|AppLovin|Unity|ironSource/i.test(aiResponse) ||
-    /policy|violation|optimization/i.test(aiResponse);
-  
-  const hasActionableAdvice = 
-    /you should|you can|you need|you could/i.test(aiResponse) ||
-    /first thing|start by|begin with/i.test(aiResponse) ||
-    /check your|look at|examine|review/i.test(aiResponse) ||
-    /try to|try this|try updating/i.test(aiResponse) ||
-    /make sure|ensure that/i.test(aiResponse) ||
-    /typically|usually|generally|often/i.test(aiResponse);
-  
-  console.log('Has monetization content:', hasMonetizationContent);
-  console.log('Has actionable advice:', hasActionableAdvice);
-  
-  // Must have SOME value to count
-  if (!hasMonetizationContent && !hasActionableAdvice) {
-    console.log('BLOCKED: No valuable content found - NOT counting');
+  // If it's short AND has multiple questions, it's clarifying
+  if (aiResponse.length < 300 && questionMarks > 3) {
+    console.log('BLOCKED: Short response with many questions - NOT counting');
     return false;
   }
   
-  // If we got here, it's a real answer
-  console.log('APPROVED: Real answer with value - COUNTING');
-  return true;
+  // PRIORITY 5: Check if it's asking for more details with these specific patterns
+  const purelyAskingPhrases = [
+    "to provide you with the best",
+    "could you please provide information",
+    "i'd like to know more",
+    "can you share more details",
+    "need more information to",
+    "before i can help"
+  ];
+  
+  let askingPhrasesFound = 0;
+  for (const phrase of purelyAskingPhrases) {
+    if (lowerResponse.includes(phrase)) {
+      askingPhrasesFound++;
+    }
+  }
+  
+  // If multiple asking phrases and short response, it's not an answer
+  if (askingPhrasesFound >= 2 && aiResponse.length < 400) {
+    console.log('BLOCKED: Multiple clarifying phrases - NOT counting');
+    return false;
+  }
+  
+  // PRIORITY 6: If it's reasonably long and doesn't match the bad patterns, it's probably good
+  if (aiResponse.length > 150) {
+    // Check if it has ANY useful content indicators
+    const hasUsefulContent = 
+      lowerResponse.includes("you") ||
+      lowerResponse.includes("your") ||
+      lowerResponse.includes("app") ||
+      lowerResponse.includes("revenue") ||
+      lowerResponse.includes("monetization") ||
+      lowerResponse.includes("ad") ||
+      lowerResponse.includes("check") ||
+      lowerResponse.includes("try") ||
+      lowerResponse.includes("should") ||
+      lowerResponse.includes("can") ||
+      lowerResponse.includes("typically") ||
+      lowerResponse.includes("usually") ||
+      lowerResponse.includes("often") ||
+      lowerResponse.includes("first") ||
+      lowerResponse.includes("start");
+    
+    if (hasUsefulContent) {
+      console.log('APPROVED: Has useful content - COUNTING');
+      return true;
+    }
+  }
+  
+  // Default: If over 100 chars and not caught by blocks above, count it
+  const shouldCount = aiResponse.length > 100;
+  console.log(`FINAL: Length ${aiResponse.length} - ${shouldCount ? 'COUNTING' : 'NOT counting'}`);
+  return shouldCount;
 }
 
 export async function POST(request) {
