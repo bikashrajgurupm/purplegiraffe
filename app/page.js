@@ -1,3 +1,5 @@
+// app/page.js - FINAL VERSION
+
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import './globals.css';
@@ -15,8 +17,8 @@ export default function Home() {
   const [user, setUser] = useState(null);
   const [isBlocked, setIsBlocked] = useState(false);
   const [showVerificationMessage, setShowVerificationMessage] = useState(false);
-  const [showMobilePricing, setShowMobilePricing] = useState(false); // ADD THIS
-  const [isMobile, setIsMobile] = useState(false); // ADD THIS
+  const [showMobilePricing, setShowMobilePricing] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const messagesEndRef = useRef(null);
 
   // Auth form states
@@ -28,7 +30,7 @@ export default function Home() {
   // Question limit
   const QUESTION_LIMIT = 10;
 
-  // ADD THIS - Check for mobile on mount and resize
+  // Check for mobile on mount and resize
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
@@ -136,7 +138,6 @@ export default function Home() {
         // Check if user has hit limit and is not logged in
         if (data.questionCount >= QUESTION_LIMIT && !user) {
           setIsBlocked(true);
-          // Will show auth modal after first blocked attempt
         }
       } catch (error) {
         console.error('Failed to load session:', error);
@@ -185,12 +186,6 @@ export default function Home() {
       return;
     }
 
-    // Check question limit before sending
-    if (questionCount >= QUESTION_LIMIT - 1 && !user) {
-      // This is their last free question
-      setIsBlocked(true);
-    }
-
     const userMessage = {
       id: Date.now().toString(),
       type: 'user',
@@ -198,6 +193,9 @@ export default function Home() {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    
+    // Store the input before clearing
+    const currentInput = input;
     setInput('');
     setLoading(true);
 
@@ -215,7 +213,7 @@ export default function Home() {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ message: input, sessionId })
+        body: JSON.stringify({ message: currentInput, sessionId })
       });
 
       const data = await response.json();
@@ -228,11 +226,12 @@ export default function Home() {
 
       setMessages(prev => [...prev, botMessage]);
       
-      const newCount = data.questionCount || questionCount + 1;
-      setQuestionCount(newCount);
+      // ALWAYS use the backend's count
+      setQuestionCount(data.questionCount);
       
-      // Show auth modal after reaching limit
-      if (newCount >= QUESTION_LIMIT && !user) {
+      // Check if should be blocked based on backend's decision
+      if (data.questionCount >= QUESTION_LIMIT && !user) {
+        setIsBlocked(true);
         setTimeout(() => {
           setShowAuthModal(true);
           const limitMessage = {
