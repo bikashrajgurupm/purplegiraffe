@@ -90,7 +90,11 @@ function isRealAnswer(aiResponse) {
     "files you uploaded",
     "in the files",
     "don't have that information",
-    "don't have access"
+    "don't have access",
+    "i need more information",
+    "i need to know",
+    "need more details",
+    "need additional information"
   ];
   
   for (const phrase of definitelyNotAnswers) {
@@ -100,138 +104,165 @@ function isRealAnswer(aiResponse) {
     }
   }
   
-  // PRIORITY 2: Check for clarifying/gathering info patterns
-  const clarifyingPhrases = [
-    "let me know",
-    "let us know",
-    "tell me",
-    "share with me",
-    "provide me",
-    "can you share",
-    "can you tell",
-    "can you provide",
-    "could you share",
-    "could you tell",
-    "could you provide",
-    "do you have",
-    "are you using",
-    "are you seeing",
-    "are you experiencing",
-    "what's your",
-    "what is your",
-    "how are your",
-    "how is your",
-    "understanding your current",
-    "understanding these",
-    "based on that information",
-    "proceed from there",
-    "explore further",
-    "tailor recommendations",
-    "help tailor",
-    "can help tailor",
-    "shed light on",
-    "dive into"
+  // PRIORITY 2: Check for substantial content indicators
+  const substantialContentIndicators = {
+    numberedLists: /\b\d+\.\s+\w+/g,
+    percentages: /\d+%/g,
+    dollarAmounts: /\$[\d,]+/g,
+    technicalTerms: /(ecpm|cpm|ctr|fill rate|ad placement|mediation|waterfall|refresh rate|banner size|interstitial|rewarded|native ad|impression|click-through|conversion|arpu|dau|mau|retention|ltv|roi|sdk|api|monetization|revenue|optimization)/gi,
+    actionPhrases: /(optimize|implement|configure|adjust|increase|decrease|improve|test|experiment|explore|ensure|consider|place|incorporate|balance|maximize|minimize|enhance|boost|reduce)/gi,
+    specificAdvice: /(you should|you can|you need to|make sure|try to|consider using|recommended to|best practice|typically|usually|generally|often|commonly)/gi
+  };
+  
+  // Count substantial content
+  let contentScore = 0;
+  let detailedContent = {};
+  
+  for (const [type, pattern] of Object.entries(substantialContentIndicators)) {
+    const matches = aiResponse.match(pattern) || [];
+    detailedContent[type] = matches.length;
+    
+    // Weight different types of content
+    if (type === 'numberedLists' && matches.length >= 2) contentScore += 3; // Multiple numbered points
+    if (type === 'technicalTerms' && matches.length >= 3) contentScore += 2;
+    if (type === 'actionPhrases' && matches.length >= 3) contentScore += 2;
+    if (type === 'specificAdvice' && matches.length >= 2) contentScore += 2;
+    if (type === 'percentages' && matches.length >= 1) contentScore += 1;
+    if (type === 'dollarAmounts' && matches.length >= 1) contentScore += 1;
+  }
+  
+  console.log('Content analysis:', detailedContent);
+  console.log('Content score:', contentScore);
+  
+  // PRIORITY 3: If high content score, it's valuable regardless of ending
+  if (contentScore >= 5) {
+    console.log('APPROVED: High content score - substantial value provided - COUNTING');
+    return true;
+  }
+  
+  // PRIORITY 4: Check if response is PRIMARILY asking for information
+  const sentences = aiResponse.split(/[.!?]+/).filter(s => s.trim().length > 10);
+  const totalSentences = sentences.length;
+  
+  // Questions that indicate gathering information
+  const infoGatheringQuestions = [
+    /what\s+(type|kind|version|platform|framework)/i,
+    /which\s+(ad|network|sdk|platform|version)/i,
+    /are\s+you\s+(using|seeing|experiencing|getting)/i,
+    /do\s+you\s+(have|use|see|get)/i,
+    /can\s+you\s+(share|tell|provide|explain)/i,
+    /could\s+you\s+(share|tell|provide|clarify)/i,
+    /how\s+(many|much|often|long)\s+(?:are|do|have)\s+you/i
   ];
   
-  // Count how many clarifying phrases are present
-  let clarifyingCount = 0;
-  for (const phrase of clarifyingPhrases) {
-    if (lowerResponse.includes(phrase)) {
-      clarifyingCount++;
-      console.log(`Found clarifying phrase: "${phrase}"`);
+  let questionSentences = 0;
+  for (const sentence of sentences) {
+    for (const pattern of infoGatheringQuestions) {
+      if (pattern.test(sentence)) {
+        questionSentences++;
+        break;
+      }
     }
   }
   
-  // If ANY "let me know" or similar phrase exists, it's asking for info
-  if (lowerResponse.includes("let me know") || 
-      lowerResponse.includes("let us know") ||
-      lowerResponse.includes("tell me more") ||
-      lowerResponse.includes("share more") ||
-      lowerResponse.includes("based on that") ||
-      lowerResponse.includes("proceed from there")) {
-    console.log('BLOCKED: Contains "let me know" or similar - asking for info - NOT counting');
+  const questionRatio = totalSentences > 0 ? questionSentences / totalSentences : 0;
+  console.log(`Question ratio: ${questionSentences}/${totalSentences} = ${questionRatio.toFixed(2)}`);
+  
+  // If more than 50% is questions, it's information gathering
+  if (questionRatio > 0.5) {
+    console.log('BLOCKED: Majority of response is questions - NOT counting');
     return false;
   }
   
-  // If multiple clarifying phrases, definitely not an answer
-  if (clarifyingCount >= 2) {
-    console.log(`BLOCKED: ${clarifyingCount} clarifying phrases found - NOT counting`);
-    return false;
+  // PRIORITY 5: Handle "let me know" contextually
+  // Only block if "let me know" appears WITHOUT substantial content
+  const hasLetMeKnow = lowerResponse.includes("let me know") || 
+                       lowerResponse.includes("let us know") ||
+                       lowerResponse.includes("feel free to ask");
+  
+  if (hasLetMeKnow) {
+    // Check if it's just at the end as a courtesy
+    const lastSentenceIndex = aiResponse.lastIndexOf('.');
+    const contentBeforeLastSentence = lastSentenceIndex > 0 ? 
+      aiResponse.substring(0, lastSentenceIndex) : aiResponse;
+    
+    // If there's substantial content before "let me know", count it
+    if (contentBeforeLastSentence.length > 300 && contentScore >= 3) {
+      console.log('APPROVED: "Let me know" is just courtesy ending after substantial content - COUNTING');
+      return true;
+    }
+    
+    // If "let me know" appears with minimal content, don't count
+    if (contentScore < 2) {
+      console.log('BLOCKED: "Let me know" with minimal content - NOT counting');
+      return false;
+    }
   }
   
-  // PRIORITY 3: Check if it ends with a question about their setup
-  const endsWithQuestion = aiResponse.trim().endsWith('?');
-  const lastSentence = aiResponse.split('.').pop().toLowerCase();
+  // PRIORITY 6: Check for structured content (lists, steps, multiple points)
+  const hasNumberedList = detailedContent.numberedLists >= 3; // At least 3 numbered points
+  const hasBulletStructure = (aiResponse.match(/\n\s*[-•]\s+/g) || []).length >= 3;
   
-  if (endsWithQuestion && (
-    lastSentence.includes("let me know") ||
-    lastSentence.includes("how are") ||
-    lastSentence.includes("what are") ||
-    lastSentence.includes("do you") ||
-    lastSentence.includes("are you"))) {
-    console.log('BLOCKED: Ends with question asking for info - NOT counting');
-    return false;
+  if ((hasNumberedList || hasBulletStructure) && aiResponse.length > 300) {
+    console.log('APPROVED: Structured list with multiple points - COUNTING');
+    return true;
   }
   
-  // PRIORITY 4: Check for "diving into" or "exploring" without actual content
-  if ((lowerResponse.includes("let's dive") || 
-       lowerResponse.includes("let's explore") ||
-       lowerResponse.includes("sure, let's")) && 
-      !lowerResponse.includes("first thing") &&
-      !lowerResponse.includes("you should") &&
-      !lowerResponse.includes("check your")) {
-    console.log('BLOCKED: Introductory phrase without actual advice - NOT counting');
-    return false;
+  // PRIORITY 7: Length combined with moderate content
+  if (aiResponse.length > 500 && contentScore >= 3) {
+    console.log('APPROVED: Long response with moderate content score - COUNTING');
+    return true;
   }
   
-  // PRIORITY 5: Check if it's just an error
+  if (aiResponse.length > 800 && contentScore >= 2) {
+    console.log('APPROVED: Very long response with some content - COUNTING');
+    return true;
+  }
+  
+  // PRIORITY 8: Short responses need high value
+  if (aiResponse.length < 150) {
+    if (contentScore < 3) {
+      console.log('BLOCKED: Short response without high value content - NOT counting');
+      return false;
+    }
+  }
+  
+  // PRIORITY 9: Error messages
   if (lowerResponse.includes("error") && lowerResponse.includes("try again")) {
     console.log('BLOCKED: Error message - NOT counting');
     return false;
   }
   
-  // PRIORITY 6: Too short responses
-  if (aiResponse.length < 50) {
-    console.log('BLOCKED: Too short (under 50 chars) - NOT counting');
+  // PRIORITY 10: Pure introductory responses
+  const introOnlyPhrases = [
+    /^(hi|hello|hey|sure|absolutely|of course|i'd be happy|i can help)/i,
+    /^let's (dive|explore|discuss|talk)/i
+  ];
+  
+  const firstSentence = sentences[0] || '';
+  let isIntroOnly = false;
+  
+  for (const pattern of introOnlyPhrases) {
+    if (pattern.test(firstSentence) && contentScore < 2 && aiResponse.length < 300) {
+      isIntroOnly = true;
+      break;
+    }
+  }
+  
+  if (isIntroOnly) {
+    console.log('BLOCKED: Introductory response without substance - NOT counting');
     return false;
   }
   
-  // PRIORITY 7: Check for actual actionable content
-  const hasActionableContent = 
-    (lowerResponse.includes("first thing") && !lowerResponse.includes("?")) ||
-    (lowerResponse.includes("check your") && lowerResponse.includes("policy")) ||
-    (lowerResponse.includes("you should") && !lowerResponse.includes("tell me")) ||
-    (lowerResponse.includes("make sure") && !lowerResponse.includes("let me know")) ||
-    (lowerResponse.includes("typically") && lowerResponse.includes("%")) ||
-    (lowerResponse.includes("usually") && lowerResponse.includes("ecpm")) ||
-    lowerResponse.includes("% drop") ||
-    lowerResponse.includes("% increase") ||
-    lowerResponse.includes("$") ||
-    (lowerResponse.includes("optimize") && lowerResponse.includes("by")) ||
-    (lowerResponse.includes("improve") && lowerResponse.includes("by"));
-  
-  // If it has strong actionable content, count it
-  if (hasActionableContent) {
-    console.log('APPROVED: Has actionable content - COUNTING');
+  // FINAL EVALUATION
+  // Be more lenient - if it has decent length and some value, count it
+  if (aiResponse.length > 250 && contentScore >= 2) {
+    console.log('APPROVED: Decent length with some valuable content - COUNTING');
     return true;
   }
   
-  // PRIORITY 8: If it's asking multiple questions, don't count
-  const questionMarks = (aiResponse.match(/\?/g) || []).length;
-  if (questionMarks >= 2) {
-    console.log(`BLOCKED: ${questionMarks} questions - likely clarifying - NOT counting`);
-    return false;
-  }
-  
-  // PRIORITY 9: Final check - must be substantial
-  // Only count if it's long AND doesn't seem to be asking for info
-  if (aiResponse.length > 300 && clarifyingCount === 0 && questionMarks <= 1) {
-    console.log('APPROVED: Long response without clarifying patterns - COUNTING');
-    return true;
-  }
-  
-  // Default: Don't count unless we're sure it's valuable
-  console.log('DEFAULT: Not enough value detected - NOT counting');
+  // Default: Only block if we're sure it's not valuable
+  console.log(`DEFAULT: Insufficient value (score: ${contentScore}, length: ${aiResponse.length}) - NOT counting`);
   return false;
 }
 
