@@ -1,4 +1,4 @@
-//Deploy test - Fixed version
+// app/api/chat/route.js - FINAL VERSION
 
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
