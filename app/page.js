@@ -152,29 +152,77 @@ export default function Home() {
   }, [messages]);
 
   // Start new chat function
-  const startNewChat = () => {
-    // Only allow if user is logged in or under question limit
-    if (isBlocked && !user) {
-      setShowAuthModal(true);
-      return;
-    }
-    
-    setMessages([]);
-    setInput('');
-    setQuestionCount(0);
-    
+ // Replace the startNewChat function in your page.js with this:
+
+const startNewChat = async () => {
+  // Only allow if user is logged in or under question limit
+  if (isBlocked && !user) {
+    setShowAuthModal(true);
+    return;
+  }
+  
+  // Clear messages and input
+  setMessages([]);
+  setInput('');
+  
+  // For logged-in users, create a new session
+  // For non-logged users, keep the same session to preserve question count
+  if (user) {
+    // Logged-in users get a new session
     const newSessionId = Math.random().toString(36).substring(2) + Date.now().toString(36);
     localStorage.setItem('pg_session_id', newSessionId);
     setSessionId(newSessionId);
     
-    setTimeout(() => {
-      setMessages([{
-        id: Date.now().toString(),
-        type: 'bot',
-        content: "👋 Welcome to Purple Giraffe! I'm your AI monetization expert. Ask me anything about app monetization, ad networks, eCPM optimization, or revenue strategies."
-      }]);
-    }, 100);
-  };
+    // Reset question count for logged-in users (they have unlimited)
+    setQuestionCount(0);
+  } else {
+    // Non-logged users keep their session and question count
+    // Don't reset the question count or session ID
+    // Just verify the current count from the backend
+    try {
+      const response = await fetch('/api/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId })
+      });
+      const data = await response.json();
+      
+      // Keep the actual question count from backend
+      setQuestionCount(data.questionCount || 0);
+      
+      // Check if they're already blocked
+      if (data.questionCount >= QUESTION_LIMIT) {
+        setIsBlocked(true);
+        
+        // Show limit reached message
+        setTimeout(() => {
+          setMessages([{
+            id: Date.now().toString(),
+            type: 'bot',
+            content: "🔒 You've reached the free question limit. Please sign up to continue our conversation and unlock unlimited access!"
+          }]);
+          setShowAuthModal(true);
+        }, 100);
+        return;
+      }
+    } catch (error) {
+      console.error('Failed to verify session:', error);
+    }
+  }
+  
+  // Show welcome message
+  setTimeout(() => {
+    const welcomeMessage = user ? 
+      "👋 New chat started! How can I help you optimize your monetization today?" :
+      `👋 Welcome to Purple Giraffe! I'm your AI monetization expert. You have ${QUESTION_LIMIT - questionCount} free questions remaining.`;
+    
+    setMessages([{
+      id: Date.now().toString(),
+      type: 'bot',
+      content: welcomeMessage
+    }]);
+  }, 100);
+};
 
   const handleSubmit = async (e) => {
     e.preventDefault();
