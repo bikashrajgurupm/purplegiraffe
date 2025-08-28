@@ -1,7 +1,6 @@
-// app/api/chat/route.js - FINAL VERSION
+// app/api/chat/route.js - LLAMA 3.1 VERSION
 
 import { createClient } from '@supabase/supabase-js';
-import OpenAI from 'openai';
 import jwt from 'jsonwebtoken';
 
 const supabase = createClient(
@@ -9,45 +8,74 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-const ASSISTANT_ID = process.env.OPENAI_ASSISTANT_ID;
 const QUESTION_LIMIT = 10;
 
-async function getOrCreateThread(sessionId, userId = null) {
-  // First, check database for existing thread
-  const { data: session } = await supabase
-    .from('sessions')
-    .select('thread_id')
+// Ollama configuration
+const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama3.1:latest';
+
+// System prompt for Purple Giraffe
+const SYSTEM_PROMPT = `You are Purple Giraffe, an expert AI assistant specializing in mobile app monetization, ad networks, and revenue optimization. You have deep knowledge of:
+
+- Ad Networks: AppLovin, Unity Ads, AdMob, IronSource, Meta Audience Network, Vungle, etc.
+- Monetization Metrics: eCPM, fill rate, ARPDAU, LTV, retention, CTR, conversion rates
+- Ad Formats: Banner, interstitial, rewarded video, native ads, offerwall
+- Optimization Strategies: Waterfall optimization, header bidding, ad placement, refresh rates
+- Technical Issues: SDK integration, mediation setup, debugging ad serving issues
+- Platform Specifics: iOS (IDFA, ATT), Android (GAID), privacy regulations
+
+When answering:
+1. Be specific and actionable
+2. Provide data-driven insights when possible
+3. Consider the user's app type and audience
+4. Suggest A/B testing approaches
+5. Address both technical and strategic aspects`;
+
+async function getConversationHistory(sessionId) {
+  const { data: messages } = await supabase
+    .from('questions')
+    .select('question, answer')
     .eq('session_id', sessionId)
-    .single();
+    .order('created_at', { ascending: false })
+    .limit(5);
   
-  if (session?.thread_id) {
-    // Verify thread still exists in OpenAI
-    try {
-      await openai.beta.threads.retrieve(session.thread_id);
-      return session.thread_id;
-    } catch (error) {
-      console.log('Thread no longer exists in OpenAI, creating new one');
-    }
+  return messages ? messages.reverse() : [];
+}
+
+async function callOllama(message, sessionId) {
+  const history = await getConversationHistory(sessionId);
+  
+  let prompt = SYSTEM_PROMPT + "\n\n";
+  
+  if (history.length > 0) {
+    prompt += "Previous conversation:\n";
+    history.forEach(h => {
+      prompt += `User: ${h.question}\nAssistant: ${h.answer}\n\n`;
+    });
   }
   
-  // Create new thread
-  const thread = await openai.beta.threads.create();
+  prompt += `User: ${message}\nAssistant:`;
   
-  // Update session with new thread ID
-  await supabase
-    .from('sessions')
-    .update({ 
-      thread_id: thread.id,
-      user_id: userId,
-      updated_at: new Date().toISOString()
+  const response = await fetch(`${OLLAMA_URL}/api/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: OLLAMA_MODEL,
+      prompt: prompt,
+      stream: false,
+      options: {
+        temperature: 0.7,
+        num_predict: 2048
+      }
     })
-    .eq('session_id', sessionId);
-  
-  return thread.id;
+  });
+
+  if (!response.ok) {
+    throw new Error(`Ollama API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.response;
 }
 
 async function getUserFromToken(token) {
@@ -68,209 +96,45 @@ async function getUserFromToken(token) {
   }
 }
 
-// Helper function to determine if response is a real answer
 function isRealAnswer(aiResponse) {
   console.log('=== CHECKING IF REAL ANSWER ===');
   console.log('Response length:', aiResponse.length);
-  console.log('First 200 chars:', aiResponse.substring(0, 200));
   
-  // Convert to lowercase for checking
   const lowerResponse = aiResponse.toLowerCase();
   
-  // PRIORITY 1: Definitely NOT real answers - "I don't know" patterns
-  const definitelyNotAnswers = [
-    "couldn't find",
-    "could not find",
-    "can't find",
-    "cannot find",
-    "didn't find",
-    "unable to find",
-    "no specific mention",
-    "not mentioned",
-    "files you uploaded",
-    "in the files",
-    "don't have that information",
-    "don't have access",
-    "i need more information",
-    "i need to know",
-    "need more details",
-    "need additional information"
+  // Simplified checking for Llama responses
+  const nonAnswerPhrases = [
+    "i don't know",
+    "i'm not sure",
+    "i cannot provide",
+    "could you provide more",
+    "can you tell me more",
+    "what type of app",
+    "need more information"
   ];
   
-  for (const phrase of definitelyNotAnswers) {
-    if (lowerResponse.includes(phrase)) {
+  for (const phrase of nonAnswerPhrases) {
+    if (lowerResponse.includes(phrase) && aiResponse.length < 200) {
       console.log(`BLOCKED: Contains "${phrase}" - NOT counting`);
       return false;
     }
   }
   
-  // PRIORITY 2: Check for substantial content indicators
-  const substantialContentIndicators = {
-    numberedLists: /\b\d+\.\s+\w+/g,
-    percentages: /\d+%/g,
-    dollarAmounts: /\$[\d,]+/g,
-    technicalTerms: /(ecpm|cpm|ctr|fill rate|ad placement|mediation|waterfall|refresh rate|banner size|interstitial|rewarded|native ad|impression|click-through|conversion|arpu|dau|mau|retention|ltv|roi|sdk|api|monetization|revenue|optimization)/gi,
-    actionPhrases: /(optimize|implement|configure|adjust|increase|decrease|improve|test|experiment|explore|ensure|consider|place|incorporate|balance|maximize|minimize|enhance|boost|reduce)/gi,
-    specificAdvice: /(you should|you can|you need to|make sure|try to|consider using|recommended to|best practice|typically|usually|generally|often|commonly)/gi
-  };
+  // Check if response has substance
+  const hasSubstance = 
+    aiResponse.length > 150 ||
+    /\d+\.\s+/.test(aiResponse) ||
+    /\d+%/.test(aiResponse) ||
+    /\$[\d,]+/.test(aiResponse);
   
-  // Count substantial content
-  let contentScore = 0;
-  let detailedContent = {};
-  
-  for (const [type, pattern] of Object.entries(substantialContentIndicators)) {
-    const matches = aiResponse.match(pattern) || [];
-    detailedContent[type] = matches.length;
-    
-    // Weight different types of content
-    if (type === 'numberedLists' && matches.length >= 2) contentScore += 3; // Multiple numbered points
-    if (type === 'technicalTerms' && matches.length >= 3) contentScore += 2;
-    if (type === 'actionPhrases' && matches.length >= 3) contentScore += 2;
-    if (type === 'specificAdvice' && matches.length >= 2) contentScore += 2;
-    if (type === 'percentages' && matches.length >= 1) contentScore += 1;
-    if (type === 'dollarAmounts' && matches.length >= 1) contentScore += 1;
-  }
-  
-  console.log('Content analysis:', detailedContent);
-  console.log('Content score:', contentScore);
-  
-  // PRIORITY 3: If high content score, it's valuable regardless of ending
-  if (contentScore >= 5) {
-    console.log('APPROVED: High content score - substantial value provided - COUNTING');
-    return true;
-  }
-  
-  // PRIORITY 4: Check if response is PRIMARILY asking for information
-  const sentences = aiResponse.split(/[.!?]+/).filter(s => s.trim().length > 10);
-  const totalSentences = sentences.length;
-  
-  // Questions that indicate gathering information
-  const infoGatheringQuestions = [
-    /what\s+(type|kind|version|platform|framework)/i,
-    /which\s+(ad|network|sdk|platform|version)/i,
-    /are\s+you\s+(using|seeing|experiencing|getting)/i,
-    /do\s+you\s+(have|use|see|get)/i,
-    /can\s+you\s+(share|tell|provide|explain)/i,
-    /could\s+you\s+(share|tell|provide|clarify)/i,
-    /how\s+(many|much|often|long)\s+(?:are|do|have)\s+you/i
-  ];
-  
-  let questionSentences = 0;
-  for (const sentence of sentences) {
-    for (const pattern of infoGatheringQuestions) {
-      if (pattern.test(sentence)) {
-        questionSentences++;
-        break;
-      }
-    }
-  }
-  
-  const questionRatio = totalSentences > 0 ? questionSentences / totalSentences : 0;
-  console.log(`Question ratio: ${questionSentences}/${totalSentences} = ${questionRatio.toFixed(2)}`);
-  
-  // If more than 50% is questions, it's information gathering
-  if (questionRatio > 0.5) {
-    console.log('BLOCKED: Majority of response is questions - NOT counting');
-    return false;
-  }
-  
-  // PRIORITY 5: Handle "let me know" contextually
-  // Only block if "let me know" appears WITHOUT substantial content
-  const hasLetMeKnow = lowerResponse.includes("let me know") || 
-                       lowerResponse.includes("let us know") ||
-                       lowerResponse.includes("feel free to ask");
-  
-  if (hasLetMeKnow) {
-    // Check if it's just at the end as a courtesy
-    const lastSentenceIndex = aiResponse.lastIndexOf('.');
-    const contentBeforeLastSentence = lastSentenceIndex > 0 ? 
-      aiResponse.substring(0, lastSentenceIndex) : aiResponse;
-    
-    // If there's substantial content before "let me know", count it
-    if (contentBeforeLastSentence.length > 300 && contentScore >= 3) {
-      console.log('APPROVED: "Let me know" is just courtesy ending after substantial content - COUNTING');
-      return true;
-    }
-    
-    // If "let me know" appears with minimal content, don't count
-    if (contentScore < 2) {
-      console.log('BLOCKED: "Let me know" with minimal content - NOT counting');
-      return false;
-    }
-  }
-  
-  // PRIORITY 6: Check for structured content (lists, steps, multiple points)
-  const hasNumberedList = detailedContent.numberedLists >= 3; // At least 3 numbered points
-  const hasBulletStructure = (aiResponse.match(/\n\s*[-•]\s+/g) || []).length >= 3;
-  
-  if ((hasNumberedList || hasBulletStructure) && aiResponse.length > 300) {
-    console.log('APPROVED: Structured list with multiple points - COUNTING');
-    return true;
-  }
-  
-  // PRIORITY 7: Length combined with moderate content
-  if (aiResponse.length > 500 && contentScore >= 3) {
-    console.log('APPROVED: Long response with moderate content score - COUNTING');
-    return true;
-  }
-  
-  if (aiResponse.length > 800 && contentScore >= 2) {
-    console.log('APPROVED: Very long response with some content - COUNTING');
-    return true;
-  }
-  
-  // PRIORITY 8: Short responses need high value
-  if (aiResponse.length < 150) {
-    if (contentScore < 3) {
-      console.log('BLOCKED: Short response without high value content - NOT counting');
-      return false;
-    }
-  }
-  
-  // PRIORITY 9: Error messages
-  if (lowerResponse.includes("error") && lowerResponse.includes("try again")) {
-    console.log('BLOCKED: Error message - NOT counting');
-    return false;
-  }
-  
-  // PRIORITY 10: Pure introductory responses
-  const introOnlyPhrases = [
-    /^(hi|hello|hey|sure|absolutely|of course|i'd be happy|i can help)/i,
-    /^let's (dive|explore|discuss|talk)/i
-  ];
-  
-  const firstSentence = sentences[0] || '';
-  let isIntroOnly = false;
-  
-  for (const pattern of introOnlyPhrases) {
-    if (pattern.test(firstSentence) && contentScore < 2 && aiResponse.length < 300) {
-      isIntroOnly = true;
-      break;
-    }
-  }
-  
-  if (isIntroOnly) {
-    console.log('BLOCKED: Introductory response without substance - NOT counting');
-    return false;
-  }
-  
-  // FINAL EVALUATION
-  // Be more lenient - if it has decent length and some value, count it
-  if (aiResponse.length > 250 && contentScore >= 2) {
-    console.log('APPROVED: Decent length with some valuable content - COUNTING');
-    return true;
-  }
-  
-  // Default: Only block if we're sure it's not valuable
-  console.log(`DEFAULT: Insufficient value (score: ${contentScore}, length: ${aiResponse.length}) - NOT counting`);
-  return false;
+  console.log('Has substance?', hasSubstance);
+  return hasSubstance;
 }
 
 export async function POST(request) {
   try {
     const { message, sessionId } = await request.json();
     
-    // Get user from auth header if present
     const authHeader = request.headers.get('authorization');
     const token = authHeader?.replace('Bearer ', '');
     const user = await getUserFromToken(token);
@@ -288,7 +152,6 @@ export async function POST(request) {
       .single();
 
     if (sessionError) {
-      // Create new session
       const { data: newSession, error: createError } = await supabase
         .from('sessions')
         .insert([{ 
@@ -306,7 +169,6 @@ export async function POST(request) {
     } else {
       session = existingSession;
       
-      // Update user_id if user just logged in
       if (user && !session.user_id) {
         await supabase
           .from('sessions')
@@ -315,7 +177,7 @@ export async function POST(request) {
       }
     }
 
-    // Check question limits for non-logged-in users BEFORE processing
+    // Check question limits
     if (!user && session.question_count >= QUESTION_LIMIT) {
       return Response.json({ 
         error: 'Question limit reached. Please sign up to continue.',
@@ -325,109 +187,49 @@ export async function POST(request) {
       }, { status: 403 });
     }
 
-    // Get or create thread for this session
-    const threadId = await getOrCreateThread(sessionId, user?.id);
-
-    // Add message to thread
-    await openai.beta.threads.messages.create(threadId, {
-      role: "user",
-      content: message
-    });
-
-    // Run the assistant
-    const run = await openai.beta.threads.runs.create(threadId, {
-      assistant_id: ASSISTANT_ID
-    });
-
-    // Wait for completion with better error handling
-    let runStatus = await openai.beta.threads.runs.retrieve(threadId, run.id);
-    let attempts = 0;
-    const maxAttempts = 30;
-
-    while (runStatus.status !== 'completed' && attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      runStatus = await openai.beta.threads.runs.retrieve(threadId, run.id);
-      attempts++;
-
-      if (runStatus.status === 'failed') {
-        console.error('Run failed:', runStatus.last_error);
-        // Don't count failed responses
-        return Response.json({ 
-          response: 'Sorry, I encountered an error processing your request. Please try again.',
-          questionCount: session.question_count, // Don't increment
-          remainingQuestions: user ? 999 : Math.max(0, QUESTION_LIMIT - session.question_count),
-          isError: true
-        });
-      }
-      
-      if (runStatus.status === 'cancelled' || runStatus.status === 'expired') {
-        // Don't count cancelled/expired responses
-        return Response.json({ 
-          response: 'The request timed out. Please try again.',
-          questionCount: session.question_count, // Don't increment
-          remainingQuestions: user ? 999 : Math.max(0, QUESTION_LIMIT - session.question_count),
-          isError: true
-        });
-      }
+    // Call Ollama to get response
+    let aiResponse;
+    try {
+      aiResponse = await callOllama(message, sessionId);
+    } catch (error) {
+      console.error('Failed to get Ollama response:', error);
+      aiResponse = 'Sorry, I encountered an error processing your request. Please try again.';
     }
 
-    if (runStatus.status !== 'completed') {
-      // Don't count timeout responses
-      return Response.json({ 
-        response: 'The assistant took too long to respond. Please try again.',
-        questionCount: session.question_count, // Don't increment
-        remainingQuestions: user ? 999 : Math.max(0, QUESTION_LIMIT - session.question_count),
-        isError: true
-      });
-    }
+    // Clean markdown from response
+    aiResponse = aiResponse
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/__(.*?)__/g, '$1')
+      .replace(/\*(.*?)\*/g, '$1')
+      .replace(/_(.*?)_/g, '$1')
+      .replace(/^#{1,6}\s+/gm, '')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/```[\s\S]*?```/g, '')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .replace(/^[\-\*_]{3,}$/gm, '')
+      .replace(/^>\s+/gm, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
 
-    // Get the assistant's response
-    const messages = await openai.beta.threads.messages.list(threadId);
-    const lastMessage = messages.data[0];
-    
-    // Extract text from the response and CLEAN MARKDOWN
-    let aiResponse = '';
-    if (lastMessage.content[0].type === 'text') {
-      aiResponse = lastMessage.content[0].text.value;
-      
-      // Strip all markdown formatting
-      aiResponse = aiResponse
-        .replace(/\*\*(.*?)\*\*/g, '$1')
-        .replace(/__(.*?)__/g, '$1')
-        .replace(/\*(.*?)\*/g, '$1')
-        .replace(/_(.*?)_/g, '$1')
-        .replace(/^#{1,6}\s+/gm, '')
-        .replace(/`([^`]+)`/g, '$1')
-        .replace(/```[\s\S]*?```/g, '')
-        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-        .replace(/^[\-\*_]{3,}$/gm, '')
-        .replace(/^>\s+/gm, '')
-        .replace(/\n{3,}/g, '\n\n')
-        .trim();
-    }
-
-    // Determine if this is a real answer that should count
-    const shouldCount = !user && isRealAnswer(aiResponse); // Only count for non-logged users
+    // Check if response should count as a question
+    const shouldCount = !user && isRealAnswer(aiResponse);
     
     console.log('Final decision - should count?', shouldCount);
     
-    // Only increment question count if it's a real answer
     let newCount = session.question_count;
     if (shouldCount) {
       newCount = session.question_count + 1;
       
-      // Update question count in database
       await supabase
         .from('sessions')
         .update({ 
           question_count: newCount,
-          thread_id: threadId,
           updated_at: new Date().toISOString()
         })
         .eq('session_id', sessionId);
     }
 
-    // Store question and answer in database (always store, even if not counting)
+    // Store question and answer
     await supabase
       .from('questions')
       .insert([{
@@ -435,11 +237,9 @@ export async function POST(request) {
         user_id: user?.id || null,
         question: message,
         answer: aiResponse,
-        thread_id: threadId,
         created_at: new Date().toISOString()
       }]);
 
-    // Calculate remaining questions
     let remainingQuestions = user ? 999 : Math.max(0, QUESTION_LIMIT - newCount);
 
     // Update chat history for logged-in users
@@ -479,14 +279,12 @@ export async function POST(request) {
       response: aiResponse,
       questionCount: newCount,
       remainingQuestions,
-      wasCountedAsQuestion: shouldCount,
-      threadId: threadId
+      wasCountedAsQuestion: shouldCount
     });
 
   } catch (error) {
     console.error('Chat error:', error);
     
-    // Try to get session for proper count
     let sessionCount = 0;
     try {
       const { data: session } = await supabase
