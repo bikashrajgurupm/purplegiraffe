@@ -235,7 +235,7 @@ ${context ? `## Relevant Knowledge Base Content:\n${context}\n\n` : ''}
     // Generate response with Groq
     console.log('💭 Generating response with Llama 3.1...');
     const completion = await groq.chat.completions.create({
-      model: "llama3-70b-8192",
+      model: "llama3-8b-8192",
       messages: messages,
       temperature: 0.4,
       max_tokens: 2000,
