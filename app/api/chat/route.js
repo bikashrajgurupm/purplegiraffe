@@ -220,7 +220,20 @@ ${context ? `## Relevant Knowledge Base Content:\n${context}\n\n` : ''}
 - Be specific with numbers, percentages, and technical details when available
 - If the knowledge base doesn't contain relevant information, provide general best practices
 - Focus on practical, implementable solutions
-- Keep responses conversational but professional`
+- Keep responses conversational but professional
+
+## FORMATTING RULES - CRITICAL:
+- DO NOT use asterisks (*) for any purpose
+- DO NOT use markdown formatting
+- DO NOT use ** for bold or * for italics
+- For bullet points, use simple dashes (-) or numbers (1. 2. 3.)
+- Write in plain text only
+- For emphasis, use CAPITALS or "quotes" instead of formatting
+
+Example of correct formatting:
+- First point (not * First point)
+- Second point (not * Second point)
+1. Numbered item (not **1.** Numbered item)`
       }
     ];
 
