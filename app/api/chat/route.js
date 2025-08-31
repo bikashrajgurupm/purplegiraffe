@@ -255,8 +255,6 @@ Example of correct formatting:
       top_p: 0.9
     });
 
-    const aiResponse = completion.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
-
     // TO THIS (add cleanup):
     let aiResponse = completion.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
 
