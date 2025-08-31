@@ -257,6 +257,28 @@ Example of correct formatting:
 
     const aiResponse = completion.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
 
+    // TO THIS (add cleanup):
+    let aiResponse = completion.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
+
+    // ADD THIS CLEANUP RIGHT AFTER:
+    aiResponse = aiResponse
+    // Handle bullet points first
+    .replace(/^\* /gm, '• ')           // Replace * bullets with • bullets
+    .replace(/^\- /gm, '• ')           // Replace - bullets with • bullets
+    .replace(/^\*\*/gm, '')            // Remove ** at line start
+    .replace(/\*\*(.*?)\*\*/g, '$1')  // Remove bold **text**
+    .replace(/__(.*?)__/g, '$1')      // Remove bold __text__
+    .replace(/\*([^*\n]+)\*/g, '$1')  // Remove italic *text* (but not bullets)
+    .replace(/_([^_\n]+)_/g, '$1')    // Remove italic _text_
+    .replace(/^#{1,6}\s+/gm, '')      // Remove headers
+    .replace(/`([^`]+)`/g, '$1')      // Remove inline code
+    .replace(/```[\s\S]*?```/g, '')   // Remove code blocks
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove links
+    .replace(/^[\*_]{3,}$/gm, '')     // Remove horizontal rules
+    .replace(/^>\s+/gm, '')           // Remove blockquotes
+    .replace(/\n{3,}/g, '\n\n')       // Clean extra newlines
+    .trim();
+
     // Determine if this is a real answer
     const shouldCount = !user && isRealAnswer(aiResponse);
     
