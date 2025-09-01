@@ -16,7 +16,7 @@ export async function GET(request) {
     const searchParams = request.nextUrl.searchParams;
     const token = searchParams.get('token');
     
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://purplegiraffe.in';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://purplegiraffe.ai';
     
     if (!token) {
       return NextResponse.redirect(new URL('/?error=invalid-token', baseUrl));
@@ -46,7 +46,7 @@ export async function GET(request) {
     
   } catch (error) {
     console.error('Critical error in verify route:', error);
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://purplegiraffe.in';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://purplegiraffe.ai';
     return NextResponse.redirect(new URL('/?error=verification-failed', baseUrl));
   }
 }
