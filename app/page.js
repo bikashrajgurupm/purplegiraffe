@@ -1,4 +1,4 @@
-// app/page.js - COMPLETE FIXED VERSION
+// app/page.js - FINAL VERSION
 
 'use client';
 import { useState, useEffect, useRef } from 'react';
@@ -133,18 +133,14 @@ export default function Home() {
         });
         const data = await response.json();
         
-        // Always trust backend's count
-        const backendCount = data.questionCount || 0;
-        setQuestionCount(backendCount);
+        setQuestionCount(data.questionCount || 0);
         
         // Check if user has hit limit and is not logged in
-        if (backendCount >= QUESTION_LIMIT && !user) {
+        if (data.questionCount >= QUESTION_LIMIT && !user) {
           setIsBlocked(true);
         }
       } catch (error) {
         console.error('Failed to load session:', error);
-        // On error, default to 0
-        setQuestionCount(0);
       }
     };
 
@@ -175,12 +171,12 @@ export default function Home() {
       localStorage.setItem('pg_session_id', newSessionId);
       setSessionId(newSessionId);
       
-      // Reset question count and blocked status for logged-in users
+      // Reset question count for logged-in users (they have unlimited)
       setQuestionCount(0);
-      setIsBlocked(false);
     } else {
       // Non-logged users keep their session and question count
-      // Verify the current count from the backend
+      // Don't reset the question count or session ID
+      // Just verify the current count from the backend
       try {
         const response = await fetch('/api/session', {
           method: 'POST',
@@ -189,12 +185,11 @@ export default function Home() {
         });
         const data = await response.json();
         
-        // Use backend's count as truth
-        const actualCount = data.questionCount || 0;
-        setQuestionCount(actualCount);
+        // Keep the actual question count from backend
+        setQuestionCount(data.questionCount || 0);
         
         // Check if they're already blocked
-        if (actualCount >= QUESTION_LIMIT) {
+        if (data.questionCount >= QUESTION_LIMIT) {
           setIsBlocked(true);
           
           // Show limit reached message
@@ -277,37 +272,30 @@ export default function Home() {
 
       setMessages(prev => [...prev, botMessage]);
       
-      // ALWAYS use backend's count, no exceptions
-      const newCount = data.questionCount || 0;
-      setQuestionCount(newCount);
+      // ALWAYS use the backend's count
+      setQuestionCount(data.questionCount);
       
-      // Check blocking based on backend's response
-      if (!user && newCount >= QUESTION_LIMIT) {
+      // Check if should be blocked based on backend's decision
+      if (data.questionCount >= QUESTION_LIMIT && !user) {
         setIsBlocked(true);
-        
-        // Only show message if we JUST hit the limit
-        if (newCount === QUESTION_LIMIT) {
-          setTimeout(() => {
-            const limitMessage = {
-              id: (Date.now() + 2).toString(),
-              type: 'bot',
-              content: "🔒 You've reached the free question limit. Please sign up to continue our conversation and unlock unlimited access!"
-            };
-            setMessages(prev => [...prev, limitMessage]);
-            setShowAuthModal(true);
-          }, 1000);
-        }
+        setTimeout(() => {
+          setShowAuthModal(true);
+          const limitMessage = {
+            id: (Date.now() + 2).toString(),
+            type: 'bot',
+            content: "🔒 You've reached the free question limit. Please sign up to continue our conversation and unlock unlimited access!"
+          };
+          setMessages(prev => [...prev, limitMessage]);
+        }, 1000);
       }
       
     } catch (error) {
-      console.error('Chat error:', error);
       const errorMessage = {
         id: (Date.now() + 1).toString(),
         type: 'bot',
         content: '❌ Sorry, I encountered an error. Please try again.'
       };
       setMessages(prev => [...prev, errorMessage]);
-      // Don't modify count on error
     } finally {
       setLoading(false);
     }
@@ -375,7 +363,6 @@ export default function Home() {
       if (response.ok) {
         if (!data.user.email_verified) {
           setAuthError('Please verify your email before logging in');
-          setAuthLoading(false);
           return;
         }
 
@@ -388,8 +375,6 @@ export default function Home() {
         setShowAuthModal(false);
         setAuthEmail('');
         setAuthPassword('');
-        // Reset question count for logged-in users
-        setQuestionCount(0);
         
         const welcomeMessage = {
           id: Date.now().toString(),
@@ -411,8 +396,7 @@ export default function Home() {
     localStorage.removeItem('pg_token');
     localStorage.removeItem('pg_user');
     setUser(null);
-    // Reload to reset state cleanly
-    window.location.reload();
+    startNewChat();
   };
 
   // Example questions for quick start
