@@ -1,4 +1,4 @@
-// app/api/analyze-file/route.js - WITH OCR IMPLEMENTATION
+// app/api/analyze-file/route.js - COMPLETE VERSION WITH OCR AND PDF
 
 import { createClient } from '@supabase/supabase-js';
 import Groq from 'groq-sdk';
@@ -33,52 +33,79 @@ async function getUserFromToken(token) {
   }
 }
 
-// Extract text from base64 image using Tesseract.js
+// Assess text quality for monetization data
+function assessTextQuality(text) {
+  if (!text || text.trim().length < 20) {
+    return { quality: 'poor', reason: 'Too little text extracted' };
+  }
+  
+  // Check for monetization keywords
+  const keywords = ['ecpm', 'cpm', 'revenue', 'impression', 'fill', 'rate', 'ads', 'network', 
+                    'admob', 'applovin', 'unity', 'click', 'ctr', '$', '%', 'monetization',
+                    'earnings', 'payout', 'dashboard', 'performance'];
+  const lowerText = text.toLowerCase();
+  const keywordMatches = keywords.filter(kw => lowerText.includes(kw)).length;
+  
+  // Check for numbers (metrics usually have numbers)
+  const numberMatches = text.match(/\d+\.?\d*/g) || [];
+  
+  // Check for gibberish (too many special characters or broken words)
+  const gibberishRatio = (text.match(/[^\w\s\.\,\$\%\-\:]/g) || []).length / text.length;
+  
+  // Scoring
+  if (keywordMatches >= 3 && numberMatches.length >= 2 && gibberishRatio < 0.2) {
+    return { quality: 'good', reason: 'Clear monetization data detected' };
+  } else if (keywordMatches >= 1 || numberMatches.length >= 1) {
+    return { quality: 'partial', reason: 'Some data extracted but may be incomplete' };
+  } else {
+    return { quality: 'poor', reason: 'Unable to extract clear monetization data' };
+  }
+}
+
+// Extract text from image using OCR
 async function extractTextFromImage(base64Data) {
   try {
     console.log('Starting OCR processing...');
     
-    // Remove data URL prefix if present
-    const base64 = base64Data.replace(/^data:image\/\w+;base64,/, '');
+    // Clean base64 string
+    let base64 = base64Data;
+    if (base64.includes('base64,')) {
+      base64 = base64.split('base64,')[1];
+    }
     
-    // Convert base64 to buffer
     const imageBuffer = Buffer.from(base64, 'base64');
+    console.log('Image buffer size:', imageBuffer.length);
     
-    // Use Tesseract.js for OCR
+    // Perform OCR
     const result = await Tesseract.recognize(
       imageBuffer,
-      'eng', // English language
+      'eng',
       {
         logger: m => console.log('OCR Progress:', m.status, m.progress)
       }
     );
     
     const extractedText = result.data.text;
-    console.log('OCR completed. Extracted text length:', extractedText.length);
+    console.log('OCR complete. Text length:', extractedText.length);
     
-    // If no text was extracted, provide a fallback
-    if (!extractedText || extractedText.trim().length < 10) {
-      return `Unable to extract clear text from the image. The image appears to show an app monetization dashboard. Please describe what specific metrics or issues you'd like me to analyze, such as:
-      - eCPM values
-      - Fill rates
-      - Ad network performance
-      - Revenue trends
-      - Impression counts`;
-    }
+    const quality = assessTextQuality(extractedText);
+    console.log('OCR Quality:', quality);
     
-    // Clean up and format the extracted text
-    const cleanedText = extractedText
-      .replace(/\s+/g, ' ')
-      .trim();
-    
-    return `Extracted text from screenshot:\n${cleanedText}`;
+    return {
+      success: true,
+      text: extractedText || '',
+      quality: quality.quality,
+      reason: quality.reason
+    };
     
   } catch (error) {
     console.error('OCR error:', error);
-    return `OCR processing failed. Please describe the content of your screenshot, including:
-    - What ad networks are shown
-    - Key metrics like eCPM, fill rate, impressions
-    - Any error messages or issues visible`;
+    return {
+      success: false,
+      text: '',
+      quality: 'error',
+      reason: 'OCR processing failed: ' + error.message
+    };
   }
 }
 
@@ -87,107 +114,139 @@ async function extractTextFromPDF(base64Data) {
   try {
     console.log('Starting PDF text extraction...');
     
-    // Remove data URL prefix if present
-    const base64 = base64Data.replace(/^data:application\/pdf;base64,/, '');
+    // Clean base64 string
+    let base64 = base64Data;
+    if (base64.includes('base64,')) {
+      base64 = base64.split('base64,')[1];
+    }
     
-    // Convert base64 to buffer
     const pdfBuffer = Buffer.from(base64, 'base64');
+    console.log('PDF buffer size:', pdfBuffer.length);
     
     // Extract text from PDF
     const data = await pdf(pdfBuffer);
     
-    console.log('PDF info:', {
+    console.log('PDF extraction complete:', {
       pages: data.numpages,
-      textLength: data.text.length
+      textLength: data.text ? data.text.length : 0
     });
     
-    // If no text was extracted
-    if (!data.text || data.text.trim().length < 10) {
-      return `Unable to extract text from the PDF. The document appears to be either image-based or empty. Please provide the key information from the document such as:
-      - Monetization metrics
-      - Performance reports
-      - Ad network data
-      - Revenue information`;
+    // Check if we got any text
+    if (!data.text || data.text.trim().length === 0) {
+      return {
+        success: false,
+        text: '',
+        quality: 'poor',
+        reason: 'PDF appears to be empty or contains only images',
+        pages: data.numpages
+      };
     }
     
-    // Limit text length to avoid token limits
-    const maxLength = 3000;
+    // Limit text length for API limits
     let extractedText = data.text.trim();
-    
+    const maxLength = 4000;
     if (extractedText.length > maxLength) {
-      extractedText = extractedText.substring(0, maxLength) + '...\n[Text truncated due to length]';
+      extractedText = extractedText.substring(0, maxLength) + '\n...[Text truncated]';
     }
     
-    return `Extracted text from PDF (${data.numpages} pages):\n${extractedText}`;
+    const quality = assessTextQuality(extractedText);
+    
+    return {
+      success: true,
+      text: extractedText,
+      quality: quality.quality,
+      reason: quality.reason,
+      pages: data.numpages
+    };
     
   } catch (error) {
     console.error('PDF extraction error:', error);
-    return `PDF processing failed. Please describe the key content from your document, including any monetization metrics, performance data, or issues you need help with.`;
+    return {
+      success: false,
+      text: '',
+      quality: 'error',
+      reason: 'PDF processing failed: ' + error.message
+    };
   }
 }
 
-// Analyze extracted content for monetization insights
-function analyzeMonetizationContent(text) {
-  const insights = {
-    metrics: [],
-    networks: [],
-    issues: [],
-    opportunities: []
+// Extract metrics from text
+function extractMetrics(text) {
+  if (!text) return {};
+  
+  const metrics = {};
+  
+  // Patterns for extracting specific metrics
+  const patterns = {
+    ecpm: /(?:ecpm|cpm)[:\s]*\$?([\d,]+\.?\d*)/gi,
+    fillRate: /(?:fill\s*rate|fill)[:\s]*([\d]+\.?\d*)%?/gi,
+    impressions: /(?:impressions?|imps?)[:\s]*([\d,]+)/gi,
+    revenue: /(?:revenue|earnings?|income)[:\s]*\$?([\d,]+\.?\d*)/gi,
+    ctr: /(?:ctr|click[\s-]*through[\s-]*rate)[:\s]*([\d]+\.?\d*)%?/gi,
+    clicks: /(?:clicks?)[:\s]*([\d,]+)/gi
   };
   
-  // Look for common metrics
-  const metricPatterns = {
-    eCPM: /ecpm[:\s]+\$?([\d.]+)/gi,
-    fillRate: /fill\s*rate[:\s]+([\d.]+)%?/gi,
-    impressions: /impressions?[:\s]+([\d,]+)/gi,
-    revenue: /revenue[:\s]+\$?([\d,.]+)/gi,
-    CTR: /ctr[:\s]+([\d.]+)%?/gi,
-    clicks: /clicks?[:\s]+([\d,]+)/gi
-  };
-  
-  for (const [metric, pattern] of Object.entries(metricPatterns)) {
-    const matches = text.matchAll(pattern);
-    for (const match of matches) {
-      insights.metrics.push({
-        type: metric,
-        value: match[1]
-      });
+  for (const [key, pattern] of Object.entries(patterns)) {
+    const matches = [...text.matchAll(pattern)];
+    if (matches.length > 0) {
+      metrics[key] = matches.map(m => m[1]);
     }
   }
   
-  // Look for ad network names
-  const networks = ['AdMob', 'AppLovin', 'Unity Ads', 'IronSource', 'Vungle', 'Facebook', 'Meta', 'Chartboost', 'InMobi', 'MoPub'];
+  // Find ad network names
+  const networks = [
+    'AdMob', 'Google AdMob', 'AppLovin', 'MAX', 'Unity Ads', 'Unity',
+    'IronSource', 'Vungle', 'Facebook', 'Meta', 'Audience Network',
+    'Chartboost', 'InMobi', 'MoPub', 'Amazon', 'AdColony', 'Tapjoy',
+    'Pangle', 'Mintegral', 'Fyber'
+  ];
+  
+  const foundNetworks = [];
   networks.forEach(network => {
-    if (text.toLowerCase().includes(network.toLowerCase())) {
-      insights.networks.push(network);
+    if (new RegExp(network, 'gi').test(text)) {
+      foundNetworks.push(network);
     }
   });
   
-  // Look for common issues
-  const issueKeywords = ['drop', 'decrease', 'low', 'error', 'fail', 'issue', 'problem', 'crash', 'blank', 'not showing', 'zero'];
-  issueKeywords.forEach(keyword => {
-    if (text.toLowerCase().includes(keyword)) {
-      const context = text.toLowerCase().indexOf(keyword);
-      const snippet = text.substring(Math.max(0, context - 30), Math.min(text.length, context + 30));
-      if (snippet.length > 10) {
-        insights.issues.push(snippet.trim());
-      }
-    }
-  });
+  if (foundNetworks.length > 0) {
+    metrics.networks = [...new Set(foundNetworks)]; // Remove duplicates
+  }
   
-  return insights;
+  return metrics;
+}
+
+// Generate helpful template for manual input
+function generateManualInputTemplate() {
+  return `I see you've uploaded a file for analysis. To provide the best optimization recommendations, please share the following metrics from your dashboard:
+
+📊 **Key Metrics:**
+• eCPM: (e.g., $2.45)
+• Fill Rate: (e.g., 85%)
+• Impressions: (e.g., 50,000)
+• Revenue: (e.g., $125.50)
+• CTR: (e.g., 1.2%)
+
+🌐 **Ad Networks Performance:**
+• Which networks are shown?
+• Performance by network?
+
+⚠️ **Issues or Concerns:**
+• Any error messages?
+• Significant drops in metrics?
+• Low performing areas?
+
+Once you provide these details, I can give you specific optimization strategies!`;
 }
 
 export async function POST(request) {
   try {
     const { file, sessionId, message } = await request.json();
     
-    // Get user from auth header
+    // Verify user authentication
     const authHeader = request.headers.get('authorization');
     const token = authHeader?.replace('Bearer ', '');
     const user = await getUserFromToken(token);
     
-    // Only logged-in users can upload files
     if (!user) {
       return Response.json({ 
         error: 'Please log in to upload files',
@@ -199,63 +258,126 @@ export async function POST(request) {
       return Response.json({ error: 'No file provided' }, { status: 400 });
     }
     
-    // Extract text based on file type
-    let extractedContent = '';
-    let fileDescription = '';
-    let insights = null;
+    console.log('Processing file:', {
+      name: file.name,
+      type: file.type,
+      dataLength: file.data ? file.data.length : 0
+    });
     
+    let extractionResult;
+    let fileDescription = '';
+    
+    // Process based on file type
     if (file.type.startsWith('image/')) {
-      extractedContent = await extractTextFromImage(file.data);
       fileDescription = 'screenshot';
+      extractionResult = await extractTextFromImage(file.data);
     } else if (file.type === 'application/pdf') {
-      extractedContent = await extractTextFromPDF(file.data);
       fileDescription = 'PDF document';
+      extractionResult = await extractTextFromPDF(file.data);
     } else {
-      return Response.json({ error: 'Unsupported file type' }, { status: 400 });
+      return Response.json({ 
+        error: 'Unsupported file type. Please upload an image (JPEG, PNG, GIF, WebP) or PDF.' 
+      }, { status: 400 });
     }
     
-    // Analyze the extracted content for monetization insights
-    insights = analyzeMonetizationContent(extractedContent);
+    // Extract metrics from OCR/PDF text
+    let extractedMetrics = {};
+    if (extractionResult.text) {
+      extractedMetrics = extractMetrics(extractionResult.text);
+    }
+    
+    // Also extract metrics from user's message if provided
+    let userMetrics = {};
+    if (message && message.length > 10) {
+      userMetrics = extractMetrics(message);
+    }
+    
+    // Combine all metrics
+    const allMetrics = {
+      ...extractedMetrics,
+      ...userMetrics
+    };
     
     // Build context for AI
-    let contextSummary = `\nFile Analysis Summary:\n`;
+    let contextForAI = '';
+    let needsManualInput = false;
     
-    if (insights.metrics.length > 0) {
-      contextSummary += `\nDetected Metrics:\n`;
-      insights.metrics.forEach(m => {
-        contextSummary += `- ${m.type}: ${m.value}\n`;
-      });
+    if (!extractionResult.success || extractionResult.quality === 'poor') {
+      // Extraction failed or quality is poor
+      needsManualInput = true;
+      
+      if (Object.keys(allMetrics).length > 0) {
+        // User provided some metrics in their message
+        contextForAI = `The ${fileDescription} upload had issues (${extractionResult.reason}), but the user provided these metrics:
+        
+${Object.entries(allMetrics).map(([key, value]) => 
+  `• ${key}: ${Array.isArray(value) ? value.join(', ') : value}`
+).join('\n')}
+
+Please analyze these metrics and provide optimization recommendations.`;
+      } else {
+        // No metrics available, ask for manual input
+        contextForAI = generateManualInputTemplate();
+      }
+      
+    } else if (extractionResult.quality === 'partial') {
+      // Partial extraction - show what we found
+      contextForAI = `Partial data extracted from ${fileDescription}:
+
+Text extracted:
+${extractionResult.text.substring(0, 1500)}${extractionResult.text.length > 1500 ? '...' : ''}
+
+Detected metrics:
+${Object.keys(allMetrics).length > 0 ? 
+  Object.entries(allMetrics).map(([key, value]) => 
+    `• ${key}: ${Array.isArray(value) ? value.join(', ') : value}`
+  ).join('\n') : 
+  '• No clear metrics detected'}
+
+Note: The extraction was partial. If you see important metrics missing, please provide them manually.`;
+      
+    } else if (extractionResult.quality === 'good') {
+      // Good extraction - full analysis
+      contextForAI = `Successfully extracted data from ${fileDescription}:
+
+${extractionResult.pages ? `Pages: ${extractionResult.pages}\n` : ''}
+Extracted text:
+${extractionResult.text.substring(0, 2000)}${extractionResult.text.length > 2000 ? '...' : ''}
+
+Detected metrics:
+${Object.keys(allMetrics).length > 0 ? 
+  Object.entries(allMetrics).map(([key, value]) => 
+    `• ${key}: ${Array.isArray(value) ? value.join(', ') : value}`
+  ).join('\n') : 
+  '• Reviewing full text for analysis...'}`;
     }
     
-    if (insights.networks.length > 0) {
-      contextSummary += `\nAd Networks Found: ${insights.networks.join(', ')}\n`;
-    }
-    
-    if (insights.issues.length > 0) {
-      contextSummary += `\nPotential Issues Detected:\n`;
-      insights.issues.slice(0, 3).forEach(issue => {
-        contextSummary += `- ${issue}\n`;
-      });
-    }
-    
-    // Prepare prompt for Groq
-    const systemPrompt = `You are an expert in mobile app monetization, ad networks, and revenue optimization. 
-    The user has uploaded a ${fileDescription} related to their app's monetization performance.
-    
-    Based on the extracted text and analysis, provide:
-    1. Key observations about the metrics (be specific with numbers if available)
-    2. Potential issues or areas of concern
-    3. Specific, actionable recommendations for improvement
-    4. Best practices relevant to their situation
-    
-    Focus on metrics like eCPM, fill rate, impressions, revenue, CTR, and network performance.
-    Be specific with your recommendations and explain the reasoning.
-    
-    FORMATTING RULES:
-    - Use simple dashes (-) for bullet points
-    - Write in plain text only
-    - Be conversational but professional
-    - If the extracted text is unclear, ask the user for specific clarification`;
+    // Prepare system prompt
+    const systemPrompt = `You are an expert in mobile app monetization, ad networks, and revenue optimization.
+
+${needsManualInput && Object.keys(allMetrics).length === 0 ? 
+  'The user uploaded a file but extraction was unsuccessful. Guide them to share the specific metrics visible in their dashboard.' :
+  'Analyze the provided data and give specific optimization recommendations.'}
+
+Key optimization strategies to consider:
+• Waterfall optimization for improved eCPM
+• Fill rate improvements (target 80%+ for tier 1 geos)
+• Network diversification to reduce dependency
+• Ad placement and frequency optimization
+• eCPM floors adjustment
+• Geographic targeting optimization
+
+Benchmarks to consider:
+• eCPM < $1.50: Generally low, needs optimization
+• Fill rate < 70%: Network or implementation issues
+• CTR < 0.5%: Possible ad placement or relevance issues
+• Single network > 60% of revenue: Over-dependency risk
+
+FORMATTING RULES:
+- Use simple dashes (-) for bullet points
+- Write in plain text only
+- Be specific with numbers and percentages
+- Provide actionable recommendations`;
     
     // Create messages for Groq
     const messages = [
@@ -265,12 +387,11 @@ export async function POST(request) {
       },
       {
         role: "user",
-        content: `${message || 'Please analyze this ' + fileDescription}\n\n${extractedContent}${contextSummary}`
+        content: `${message || `Please analyze this ${fileDescription}`}\n\n${contextForAI}`
       }
     ];
     
-    // Generate response with Groq
-    console.log('Analyzing with Llama 3.1...');
+    console.log('Sending to Llama 3.1 for analysis...');
     const completion = await groq.chat.completions.create({
       model: "llama-3.1-8b-instant",
       messages: messages,
@@ -279,7 +400,8 @@ export async function POST(request) {
       top_p: 0.9
     });
     
-    let aiResponse = completion.choices[0]?.message?.content || 'I can analyze your file, but I need more context. Could you tell me what specific metrics or issues you\'d like me to focus on?';
+    let aiResponse = completion.choices[0]?.message?.content || 
+      'I need more information to analyze your monetization data. Please provide the key metrics from your dashboard.';
     
     // Clean up formatting
     aiResponse = aiResponse
@@ -294,12 +416,7 @@ export async function POST(request) {
       .replace(/```[\s\S]*?```/g, '')
       .trim();
     
-    // Add a note about OCR accuracy if relevant
-    if (file.type.startsWith('image/') && extractedContent.includes('Unable to extract clear text')) {
-      aiResponse = `Note: The text extraction from your image had limited success. For better analysis, please ensure the screenshot is clear and text is readable.\n\n${aiResponse}`;
-    }
-    
-    // Store the analysis in the database
+    // Store in database
     if (sessionId) {
       await supabase
         .from('questions')
@@ -316,14 +433,15 @@ export async function POST(request) {
     return Response.json({ 
       response: aiResponse,
       fileProcessed: true,
-      extractedMetrics: insights?.metrics || [],
-      detectedNetworks: insights?.networks || []
+      extractionQuality: extractionResult.quality,
+      metricsFound: Object.keys(allMetrics).length > 0,
+      metrics: allMetrics
     });
     
   } catch (error) {
     console.error('File analysis error:', error);
     return Response.json({ 
-      error: 'Failed to analyze the file. Please try describing what you see in the image instead.',
+      error: 'Failed to process the file. Please try again or describe the metrics you see.',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     }, { status: 500 });
   }
