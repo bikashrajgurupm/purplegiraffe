@@ -284,8 +284,7 @@ Example of correct formatting:
         
         newCount = latestSession?.question_count || newCount;
       }
-      else if (updatedSession){
-        newCount = updatedSession.question_count;
+      
     } else {
       // For logged users, just update conversation history
       const updatedHistory = [
