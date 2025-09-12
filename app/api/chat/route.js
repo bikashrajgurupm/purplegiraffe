@@ -1,4 +1,4 @@
-// app/api/chat/route.js - Llama 3.1 + Groq Version
+// app/api/chat/route.js - COMPLETE FIXED VERSION
 
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
@@ -103,43 +103,6 @@ async function retrieveContext(query, topK = 7) {
   return contextParts;
 }
 
-// Check if response is substantial (keeping your existing logic)
-function isRealAnswer(aiResponse) {
-  const lowerResponse = aiResponse.toLowerCase();
-  
-  // Your existing validation logic
-  const definitelyNotAnswers = [
-    "couldn't find",
-    "could not find",
-    "can't find",
-    "cannot find",
-    "didn't find",
-    "unable to find",
-    "no specific mention",
-    "not mentioned",
-    "files you uploaded",
-    "in the files",
-    "don't have that information",
-    "don't have access",
-    "i need more information",
-    "i need to know",
-    "need more details",
-    "need additional information"
-  ];
-  
-  for (const phrase of definitelyNotAnswers) {
-    if (lowerResponse.includes(phrase)) {
-      return false;
-    }
-  }
-  
-  // Check for substantial content
-  const technicalTerms = /(ecpm|cpm|ctr|fill rate|ad placement|mediation|waterfall|refresh rate|banner size|interstitial|rewarded|native ad|impression|click-through|conversion|arpu|dau|mau|retention|ltv|roi|sdk|api|monetization|revenue|optimization)/gi;
-  const technicalMatches = aiResponse.match(technicalTerms) || [];
-  
-  return aiResponse.length > 150 && technicalMatches.length >= 2;
-}
-
 export async function POST(request) {
   try {
     const { message, sessionId } = await request.json();
@@ -189,11 +152,15 @@ export async function POST(request) {
       }
     }
 
+    // Get current count from database
+    const currentCount = session.question_count || 0;
+    console.log('Current question count:', currentCount);
+
     // Check question limits for non-logged-in users
-    if (!user && session.question_count >= QUESTION_LIMIT) {
+    if (!user && currentCount >= QUESTION_LIMIT) {
       return Response.json({ 
         error: 'Question limit reached. Please sign up to continue.',
-        questionCount: session.question_count,
+        questionCount: currentCount,
         remainingQuestions: 0,
         limitReached: true
       }, { status: 403 });
@@ -255,49 +222,85 @@ Example of correct formatting:
       top_p: 0.9
     });
 
-    // TO THIS (add cleanup):
     let aiResponse = completion.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
 
-    // ADD THIS CLEANUP RIGHT AFTER:
+    // Clean up formatting
     aiResponse = aiResponse
-    // Handle bullet points first
-    .replace(/^\* /gm, '• ')           // Replace * bullets with • bullets
-    .replace(/^\- /gm, '• ')           // Replace - bullets with • bullets
-    .replace(/^\*\*/gm, '')            // Remove ** at line start
-    .replace(/\*\*(.*?)\*\*/g, '$1')  // Remove bold **text**
-    .replace(/__(.*?)__/g, '$1')      // Remove bold __text__
-    .replace(/\*([^*\n]+)\*/g, '$1')  // Remove italic *text* (but not bullets)
-    .replace(/_([^_\n]+)_/g, '$1')    // Remove italic _text_
-    .replace(/^#{1,6}\s+/gm, '')      // Remove headers
-    .replace(/`([^`]+)`/g, '$1')      // Remove inline code
-    .replace(/```[\s\S]*?```/g, '')   // Remove code blocks
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove links
-    .replace(/^[\*_]{3,}$/gm, '')     // Remove horizontal rules
-    .replace(/^>\s+/gm, '')           // Remove blockquotes
-    .replace(/\n{3,}/g, '\n\n')       // Clean extra newlines
-    .trim();
+      .replace(/^\* /gm, '• ')
+      .replace(/^\- /gm, '• ')
+      .replace(/^\*\*/gm, '')
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/__(.*?)__/g, '$1')
+      .replace(/\*([^*\n]+)\*/g, '$1')
+      .replace(/_([^_\n]+)_/g, '$1')
+      .replace(/^#{1,6}\s+/gm, '')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/```[\s\S]*?```/g, '')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .replace(/^[\*_]{3,}$/gm, '')
+      .replace(/^>\s+/gm, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
 
-    // Determine if this is a real answer
-    const shouldCount = !user && isRealAnswer(aiResponse);
+    // Update question count for non-logged users
+    let newCount = currentCount;
+    let shouldCount = false;
     
-    console.log('Response generated, should count?', shouldCount);
-    
-    // Update question count if needed
-    let newCount = session.question_count;
-    if (shouldCount) {
-      newCount = session.question_count + 1;
+    if (!user) {
+      // Always count for non-logged users
+      shouldCount = true;
+      newCount = currentCount + 1;
+      
+      console.log('Incrementing count from', currentCount, 'to', newCount);
       
       // Update conversation history
       const updatedHistory = [
         ...(history || []),
         { role: "user", content: message },
         { role: "assistant", content: aiResponse }
-      ].slice(-10); // Keep last 5 exchanges
+      ].slice(-10);
+      
+      // Simple update without complex locking
+      const { data: updatedSession, error: updateError } = await supabase
+        .from('sessions')
+        .update({ 
+          question_count: newCount,
+          thread_id: threadId,
+          conversation_history: updatedHistory,
+          updated_at: new Date().toISOString()
+        })
+        .eq('session_id', sessionId)
+        .select()
+        .single();
+      
+      if (updateError) {
+        console.error('Failed to update session:', updateError);
+        // Try to get the current count on error
+        const { data: latestSession } = await supabase
+          .from('sessions')
+          .select('question_count')
+          .eq('session_id', sessionId)
+          .single();
+        
+        if (latestSession) {
+          newCount = latestSession.question_count;
+          console.log('Using fallback count:', newCount);
+        }
+      } else if (updatedSession) {
+        newCount = updatedSession.question_count;
+        console.log('Update successful, count is now:', newCount);
+      }
+    } else {
+      // For logged users, just update conversation history
+      const updatedHistory = [
+        ...(history || []),
+        { role: "user", content: message },
+        { role: "assistant", content: aiResponse }
+      ].slice(-10);
       
       await supabase
         .from('sessions')
         .update({ 
-          question_count: newCount,
           thread_id: threadId,
           conversation_history: updatedHistory,
           updated_at: new Date().toISOString()
@@ -353,6 +356,8 @@ Example of correct formatting:
       }
     }
 
+    console.log('Final count being returned:', newCount);
+
     return Response.json({ 
       response: aiResponse,
       questionCount: newCount,
@@ -366,11 +371,12 @@ Example of correct formatting:
     
     let sessionCount = 0;
     try {
-      const { sessionId } = await request.json();
+      const body = await request.text();
+      const parsed = JSON.parse(body);
       const { data: session } = await supabase
         .from('sessions')
         .select('question_count')
-        .eq('session_id', sessionId)
+        .eq('session_id', parsed.sessionId)
         .single();
       sessionCount = session?.question_count || 0;
     } catch (e) {
