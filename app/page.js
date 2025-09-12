@@ -134,6 +134,7 @@ export default function Home() {
         const data = await response.json();
         
         setQuestionCount(data.questionCount || 0);
+        setQuestionCount(backendCount);
         
         // Check if user has hit limit and is not logged in
         if (data.questionCount >= QUESTION_LIMIT && !user) {
@@ -173,6 +174,7 @@ export default function Home() {
       
       // Reset question count for logged-in users (they have unlimited)
       setQuestionCount(0);
+      setIsBlocked(false); 
     } else {
       // Non-logged users keep their session and question count
       // Don't reset the question count or session ID
@@ -273,20 +275,24 @@ export default function Home() {
       setMessages(prev => [...prev, botMessage]);
       
       // ALWAYS use the backend's count
+      const newCount = data.questionCount || 0;
       setQuestionCount(data.questionCount);
       
       // Check if should be blocked based on backend's decision
-      if (data.questionCount >= QUESTION_LIMIT && !user) {
+       if (!user && newCount >= QUESTION_LIMIT) {
         setIsBlocked(true);
+  
+          // Only show message if we JUST hit the limit
+        if (newCount === QUESTION_LIMIT) {
         setTimeout(() => {
-          setShowAuthModal(true);
-          const limitMessage = {
-            id: (Date.now() + 2).toString(),
-            type: 'bot',
-            content: "🔒 You've reached the free question limit. Please sign up to continue our conversation and unlock unlimited access!"
-          };
-          setMessages(prev => [...prev, limitMessage]);
-        }, 1000);
+         const limitMessage = {
+          id: (Date.now() + 2).toString(),
+          type: 'bot',
+          content: "🔒 You've reached the free question limit. Please sign up to continue our conversation and unlock unlimited access!"
+        };
+        setMessages(prev => [...prev, limitMessage]);
+        setShowAuthModal(true);
+    }, 1000);
       }
       
     } catch (error) {
@@ -372,6 +378,8 @@ export default function Home() {
         
         setUser(data.user);
         setIsBlocked(false);
+        setQuestionCount(0);
+        
         setShowAuthModal(false);
         setAuthEmail('');
         setAuthPassword('');
@@ -396,7 +404,9 @@ export default function Home() {
     localStorage.removeItem('pg_token');
     localStorage.removeItem('pg_user');
     setUser(null);
-    startNewChat();
+     // Don't call startNewChat() immediately, let useEffect handle session
+  // This prevents race conditions
+  window.location.reload(); // Or just reload to reset state cleanly
   };
 
   // Example questions for quick start
