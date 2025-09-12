@@ -1,4 +1,4 @@
-// app/page.js - FINAL VERSION
+// app/page.js - WITH FILE UPLOAD FEATURE
 
 'use client';
 import { useState, useEffect, useRef } from 'react';
@@ -13,12 +13,16 @@ export default function Home() {
   const [questionCount, setQuestionCount] = useState(0);
   const [showSidebar, setShowSidebar] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, setAuthMode] = useState('signup'); // 'login' or 'signup'
+  const [authMode, setAuthMode] = useState('signup');
   const [user, setUser] = useState(null);
   const [isBlocked, setIsBlocked] = useState(false);
   const [showVerificationMessage, setShowVerificationMessage] = useState(false);
   const [showMobilePricing, setShowMobilePricing] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  
+  // File upload states
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
 
   // Auth form states
@@ -29,6 +33,10 @@ export default function Home() {
 
   // Question limit
   const QUESTION_LIMIT = 10;
+
+  // File upload constraints
+  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
   // Check for mobile on mount and resize
   useEffect(() => {
@@ -51,7 +59,6 @@ export default function Home() {
     const userData = localStorage.getItem('pg_user');
     if (token && userData) {
       const parsedUser = JSON.parse(userData);
-      // Only set user if email is verified
       if (parsedUser.email_verified) {
         setUser(parsedUser);
         setIsBlocked(false);
@@ -65,7 +72,6 @@ export default function Home() {
     const error = urlParams.get('error');
     
     if (verified === 'true' && email) {
-      // Show success message
       const successMessage = {
         id: Date.now().toString(),
         type: 'bot',
@@ -73,12 +79,10 @@ export default function Home() {
       };
       setMessages([successMessage]);
       
-      // Show login modal
       setAuthMode('login');
       setShowAuthModal(true);
-      setAuthEmail(decodeURIComponent(email)); // Pre-fill email
+      setAuthEmail(decodeURIComponent(email));
       
-      // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
     
@@ -112,7 +116,6 @@ export default function Home() {
         setMessages([message]);
       }
       
-      // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
@@ -135,7 +138,6 @@ export default function Home() {
         
         setQuestionCount(data.questionCount || 0);
         
-        // Check if user has hit limit and is not logged in
         if (data.questionCount >= QUESTION_LIMIT && !user) {
           setIsBlocked(true);
         }
@@ -151,32 +153,139 @@ export default function Home() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // File handling functions
+  const handleFileSelect = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Only logged-in users can upload
+    if (!user) {
+      alert('Please log in to upload files');
+      return;
+    }
+
+    // Validate file type
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      alert('Please upload an image (JPEG, PNG, GIF, WebP) or PDF file');
+      return;
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      alert('File size must be less than 10MB');
+      return;
+    }
+
+    // Show file preview message
+    const fileMessage = {
+      id: Date.now().toString(),
+      type: 'user',
+      content: `📎 Uploading: ${file.name}`,
+      file: {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        url: file.type.startsWith('image/') ? URL.createObjectURL(file) : null
+      }
+    };
+    setMessages(prev => [...prev, fileMessage]);
+
+    // Process the file
+    await processFileWithAI(file);
+    
+    // Clear the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const processFileWithAI = async (file) => {
+    setUploading(true);
+    setLoading(true);
+
+    try {
+      // Convert file to base64
+      const base64 = await fileToBase64(file);
+
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+
+      const token = localStorage.getItem('pg_token');
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      // Send to backend for analysis
+      const response = await fetch('/api/analyze-file', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          file: {
+            name: file.name,
+            type: file.type,
+            data: base64
+          },
+          sessionId,
+          message: `Analyze this ${file.type.includes('image') ? 'screenshot' : 'document'} and provide insights about the monetization metrics shown.`
+        })
+      });
+
+      const data = await response.json();
+
+      const botMessage = {
+        id: (Date.now() + 1).toString(),
+        type: 'bot',
+        content: data.response || data.error || 'I\'ve analyzed your file. Please let me know what specific metrics or issues you\'d like to discuss.'
+      };
+
+      setMessages(prev => [...prev, botMessage]);
+
+    } catch (error) {
+      console.error('File processing error:', error);
+      const errorMessage = {
+        id: (Date.now() + 1).toString(),
+        type: 'bot',
+        content: '❌ Sorry, I couldn\'t process the file. Please try again or describe what you\'re seeing in the image/document.'
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setUploading(false);
+      setLoading(false);
+    }
+  };
+
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
   // Start new chat function
   const startNewChat = async () => {
-    // Only allow if user is logged in or under question limit
     if (isBlocked && !user) {
       setShowAuthModal(true);
       return;
     }
     
-    // Clear messages and input
     setMessages([]);
     setInput('');
     
-    // For logged-in users, create a new session
-    // For non-logged users, keep the same session to preserve question count
     if (user) {
-      // Logged-in users get a new session
       const newSessionId = Math.random().toString(36).substring(2) + Date.now().toString(36);
       localStorage.setItem('pg_session_id', newSessionId);
       setSessionId(newSessionId);
-      
-      // Reset question count for logged-in users (they have unlimited)
       setQuestionCount(0);
     } else {
-      // Non-logged users keep their session and question count
-      // Don't reset the question count or session ID
-      // Just verify the current count from the backend
       try {
         const response = await fetch('/api/session', {
           method: 'POST',
@@ -185,14 +294,11 @@ export default function Home() {
         });
         const data = await response.json();
         
-        // Keep the actual question count from backend
         setQuestionCount(data.questionCount || 0);
         
-        // Check if they're already blocked
         if (data.questionCount >= QUESTION_LIMIT) {
           setIsBlocked(true);
           
-          // Show limit reached message
           setTimeout(() => {
             setMessages([{
               id: Date.now().toString(),
@@ -208,10 +314,9 @@ export default function Home() {
       }
     }
     
-    // Show welcome message
     setTimeout(() => {
       const welcomeMessage = user ? 
-        "👋 New chat started! How can I help you optimize your monetization today?" :
+        "👋 New chat started! How can I help you optimize your monetization today? You can now upload screenshots of your ad dashboards for analysis!" :
         `👋 Welcome to Purple Giraffe! I'm your AI monetization expert. You have ${QUESTION_LIMIT - questionCount} free questions remaining.`;
       
       setMessages([{
@@ -226,7 +331,6 @@ export default function Home() {
     e.preventDefault();
     if (!input.trim() || loading) return;
 
-    // Check if blocked
     if (isBlocked && !user) {
       setShowAuthModal(true);
       return;
@@ -240,7 +344,6 @@ export default function Home() {
 
     setMessages(prev => [...prev, userMessage]);
     
-    // Store the input before clearing
     const currentInput = input;
     setInput('');
     setLoading(true);
@@ -250,7 +353,6 @@ export default function Home() {
         'Content-Type': 'application/json'
       };
 
-      // Add auth token if user is logged in
       const token = localStorage.getItem('pg_token');
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
@@ -272,10 +374,8 @@ export default function Home() {
 
       setMessages(prev => [...prev, botMessage]);
       
-      // ALWAYS use the backend's count
       setQuestionCount(data.questionCount);
       
-      // Check if should be blocked based on backend's decision
       if (data.questionCount >= QUESTION_LIMIT && !user) {
         setIsBlocked(true);
         setTimeout(() => {
@@ -320,13 +420,11 @@ export default function Home() {
       const data = await response.json();
 
       if (response.ok) {
-        // Show verification message
         setShowVerificationMessage(true);
         setShowAuthModal(false);
         setAuthEmail('');
         setAuthPassword('');
         
-        // Don't log them in yet - they need to verify email
         const verifyMessage = {
           id: Date.now().toString(),
           type: 'bot',
@@ -366,7 +464,6 @@ export default function Home() {
           return;
         }
 
-        // Store token and user data
         localStorage.setItem('pg_token', data.token);
         localStorage.setItem('pg_user', JSON.stringify(data.user));
         
@@ -379,7 +476,7 @@ export default function Home() {
         const welcomeMessage = {
           id: Date.now().toString(),
           type: 'bot',
-          content: `🎉 Welcome back! You now have unlimited access. How can I help you optimize your monetization today?`
+          content: `🎉 Welcome back! You now have unlimited access and can upload screenshots for analysis. How can I help you optimize your monetization today?`
         };
         setMessages(prev => [...prev, welcomeMessage]);
       } else {
@@ -399,7 +496,6 @@ export default function Home() {
     startNewChat();
   };
 
-  // Example questions for quick start
   const exampleQuestions = [
     "My eCPM dropped 40% overnight",
     "How to optimize AppLovin waterfall?",
@@ -441,7 +537,6 @@ export default function Home() {
               </button>
             )}
             
-            {/* Desktop toggle sidebar button */}
             {!isMobile && (
               <button 
                 className="toggle-sidebar-btn desktop-only"
@@ -455,7 +550,6 @@ export default function Home() {
               </button>
             )}
             
-            {/* Mobile pricing button */}
             {isMobile && (
               <button 
                 className="mobile-pricing-btn"
@@ -502,6 +596,12 @@ export default function Home() {
                   </div>
                 )}
                 
+                {user && (
+                  <div className="question-counter-display" style={{background: '#F0FDF4', borderColor: '#10B981'}}>
+                    <p style={{color: '#10B981'}}>✨ Pro tip: You can upload screenshots of your ad dashboards for detailed analysis!</p>
+                  </div>
+                )}
+                
                 <div className="example-questions">
                   {exampleQuestions.map((question, index) => (
                     <button
@@ -531,11 +631,51 @@ export default function Home() {
                       )}
                       <div className="message-content">
                         {message.content}
+                        
+                        {/* File preview for uploaded files */}
+                        {message.file && (
+                          <>
+                            {message.file.type.startsWith('image/') && message.file.url ? (
+                              <div className="image-preview">
+                                <img src={message.file.url} alt={message.file.name} />
+                              </div>
+                            ) : (
+                              <div className="file-preview">
+                                <div className="file-preview-icon">
+                                  📄
+                                </div>
+                                <div className="file-preview-info">
+                                  <div className="file-preview-name">{message.file.name}</div>
+                                  <div className="file-preview-size">{formatFileSize(message.file.size)}</div>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
                 ))}
-                {loading && (
+                
+                {uploading && (
+                  <div className="message-wrapper bot">
+                    <div className="message-container">
+                      <div className="avatar">
+                        <img src="/logo.png" alt="PurpleGiraffe" style={{width: '24px', height: '24px'}} />
+                      </div>
+                      <div className="message-content">
+                        <div className="processing-file">
+                          <svg className="spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 12a9 9 0 11-6.219-8.56"/>
+                          </svg>
+                          <span>Analyzing your file...</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {loading && !uploading && (
                   <div className="message-wrapper bot">
                     <div className="message-container">
                       <div className="avatar">
@@ -581,22 +721,58 @@ export default function Home() {
                   className="message-input"
                   disabled={loading || (isBlocked && !user)}
                 />
-                <button 
-                  type="submit" 
-                  className="send-button" 
-                  disabled={loading || !input.trim() || (isBlocked && !user)}
-                >
-                  {loading ? (
-                    <svg className="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 12a9 9 0 11-6.219-8.56"/>
-                    </svg>
-                  ) : (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="22" y1="2" x2="11" y2="13"/>
-                      <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                    </svg>
+                
+                {/* File Upload Input (hidden) */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={handleFileSelect}
+                  style={{ display: 'none' }}
+                />
+                
+                <div className="input-actions">
+                  {/* File Upload Button - Only for logged-in users */}
+                  {user && (
+                    <button
+                      type="button"
+                      className="file-upload-btn"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading || loading}
+                      title="Upload screenshot or PDF"
+                    >
+                      {uploading ? (
+                        <svg className="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 12a9 9 0 11-6.219-8.56"/>
+                        </svg>
+                      ) : (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                          <polyline points="17 8 12 3 7 8"/>
+                          <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                      )}
+                    </button>
                   )}
-                </button>
+                  
+                  {/* Send Button */}
+                  <button 
+                    type="submit" 
+                    className="send-button" 
+                    disabled={loading || !input.trim() || (isBlocked && !user)}
+                  >
+                    {loading && !uploading ? (
+                      <svg className="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 12a9 9 0 11-6.219-8.56"/>
+                      </svg>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="22" y1="2" x2="11" y2="13"/>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
             </form>
             <p className="input-footer">
@@ -642,12 +818,12 @@ export default function Home() {
                 user={user} 
                 currentTier={user?.tier || 'free'}
                 onSignupClick={() => {
-                  setShowMobilePricing(false);  // Close pricing modal first
+                  setShowMobilePricing(false);
                   setAuthMode('signup');
                   setShowAuthModal(true);
                 }}
                 onLoginClick={() => {
-                  setShowMobilePricing(false);  // Close pricing modal first
+                  setShowMobilePricing(false);
                   setAuthMode('login');
                   setShowAuthModal(true);
                 }}
