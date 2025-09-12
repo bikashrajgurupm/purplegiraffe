@@ -1,4 +1,4 @@
-// app/page.js - FIXED VERSION
+// app/page.js - FINAL VERSION
 
 'use client';
 import { useState, useEffect, useRef } from 'react';
@@ -134,6 +134,7 @@ export default function Home() {
         const data = await response.json();
         
         setQuestionCount(data.questionCount || 0);
+        setQuestionCount(backendCount);
         
         // Check if user has hit limit and is not logged in
         if (data.questionCount >= QUESTION_LIMIT && !user) {
@@ -275,25 +276,25 @@ export default function Home() {
       
       // ALWAYS use the backend's count
       const newCount = data.questionCount || 0;
-      setQuestionCount(newCount);
+      setQuestionCount(data.questionCount);
       
       // Check if should be blocked based on backend's decision
-      if (!user && newCount >= QUESTION_LIMIT) {
+       if (!user && newCount >= QUESTION_LIMIT) {
         setIsBlocked(true);
   
-        // Only show message if we JUST hit the limit
+          // Only show message if we JUST hit the limit
         if (newCount === QUESTION_LIMIT) {
-          setTimeout(() => {
-            const limitMessage = {
-              id: (Date.now() + 2).toString(),
-              type: 'bot',
-              content: "🔒 You've reached the free question limit. Please sign up to continue our conversation and unlock unlimited access!"
-            };
-            setMessages(prev => [...prev, limitMessage]);
-            setShowAuthModal(true);
-          }, 1000);
-        }
+        setTimeout(() => {
+         const limitMessage = {
+          id: (Date.now() + 2).toString(),
+          type: 'bot',
+          content: "🔒 You've reached the free question limit. Please sign up to continue our conversation and unlock unlimited access!"
+        };
+        setMessages(prev => [...prev, limitMessage]);
+        setShowAuthModal(true);
+    }, 1000);
       }
+      
     } catch (error) {
       const errorMessage = {
         id: (Date.now() + 1).toString(),
@@ -403,9 +404,9 @@ export default function Home() {
     localStorage.removeItem('pg_token');
     localStorage.removeItem('pg_user');
     setUser(null);
-    // Don't call startNewChat() immediately, let useEffect handle session
-    // This prevents race conditions
-    window.location.reload(); // Or just reload to reset state cleanly
+     // Don't call startNewChat() immediately, let useEffect handle session
+  // This prevents race conditions
+  window.location.reload(); // Or just reload to reset state cleanly
   };
 
   // Example questions for quick start
