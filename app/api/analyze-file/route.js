@@ -240,7 +240,10 @@ Once you provide these details, I can give you specific optimization strategies!
 
 export async function POST(request) {
   try {
-    const { file, sessionId, message } = await request.json();
+    const body = await request.json();
+    console.log('Received request body keys:', Object.keys(body));
+    
+    const { file, sessionId, message } = body;
     
     // Verify user authentication
     const authHeader = request.headers.get('authorization');
@@ -254,14 +257,34 @@ export async function POST(request) {
       }, { status: 401 });
     }
     
-    if (!file || !file.data) {
-      return Response.json({ error: 'No file provided' }, { status: 400 });
+    // Better file validation
+    if (!file) {
+      console.error('No file object in request');
+      return Response.json({ 
+        error: 'No file provided in request',
+        receivedKeys: Object.keys(body)
+      }, { status: 400 });
+    }
+    
+    if (!file.data) {
+      console.error('File object missing data:', {
+        hasName: !!file.name,
+        hasType: !!file.type,
+        hasData: !!file.data,
+        hasSize: !!file.size
+      });
+      return Response.json({ 
+        error: 'File data is missing',
+        fileKeys: Object.keys(file)
+      }, { status: 400 });
     }
     
     console.log('Processing file:', {
       name: file.name,
       type: file.type,
-      dataLength: file.data ? file.data.length : 0
+      size: file.size || 'unknown',
+      dataLength: file.data ? file.data.length : 0,
+      dataPreview: file.data ? file.data.substring(0, 100) : 'no data'
     });
     
     let extractionResult;
