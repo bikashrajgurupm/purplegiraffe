@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import Groq from 'groq-sdk';
 import jwt from 'jsonwebtoken';
 import Tesseract from 'tesseract.js';
-import pdf from 'pdf-parse';
+
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
