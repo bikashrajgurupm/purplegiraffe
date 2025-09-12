@@ -17,7 +17,9 @@
     "bcrypt": "^5.1.1",
     "jsonwebtoken": "^9.0.2",
      "groq-sdk": "^0.3.0",
-    "resend": "^3.1.0"
+    "resend": "^3.1.0",
+     "tesseract.js": "^5.0.4",  
+    "pdf-parse": "^1.1.1"      
   },
   "devDependencies": {
     "eslint": "^8",
