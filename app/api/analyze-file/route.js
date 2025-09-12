@@ -109,61 +109,20 @@ async function extractTextFromImage(base64Data) {
   }
 }
 
-// Extract text from PDF
+// Simple PDF text extraction fallback
 async function extractTextFromPDF(base64Data) {
   try {
-    console.log('Starting PDF text extraction...');
+    console.log('PDF extraction attempted - using fallback method');
     
-    // Dynamic import to avoid build issues
-    const pdf = await import('pdf-parse');
-    const pdfParse = pdf.default || pdf;
-    
-    // Clean base64 string
-    let base64 = base64Data;
-    if (base64.includes('base64,')) {
-      base64 = base64.split('base64,')[1];
-    }
-    
-    const pdfBuffer = Buffer.from(base64, 'base64');
-    console.log('PDF buffer size:', pdfBuffer.length);
-    
-    // Extract text from PDF with options to prevent test file loading
-    const data = await pdfParse(pdfBuffer, {
-      // Disable test file loading
-      max: 0
-    });
-    
-    console.log('PDF extraction complete:', {
-      pages: data.numpages,
-      textLength: data.text ? data.text.length : 0
-    });
-    
-    // Check if we got any text
-    if (!data.text || data.text.trim().length === 0) {
-      return {
-        success: false,
-        text: '',
-        quality: 'poor',
-        reason: 'PDF appears to be empty or contains only images',
-        pages: data.numpages
-      };
-    }
-    
-    // Limit text length for API limits
-    let extractedText = data.text.trim();
-    const maxLength = 4000;
-    if (extractedText.length > maxLength) {
-      extractedText = extractedText.substring(0, maxLength) + '\n...[Text truncated]';
-    }
-    
-    const quality = assessTextQuality(extractedText);
+    // Since pdf-parse has build issues, we'll provide a fallback
+    // In production, you might want to use a PDF parsing API service
     
     return {
-      success: true,
-      text: extractedText,
-      quality: quality.quality,
-      reason: quality.reason,
-      pages: data.numpages
+      success: false,
+      text: '',
+      quality: 'poor',
+      reason: 'PDF text extraction is currently limited. Please copy and paste the key metrics from your PDF.',
+      pages: 0
     };
     
   } catch (error) {
