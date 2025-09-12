@@ -270,7 +270,8 @@ Example of correct formatting:
           updated_at: new Date().toISOString()
         })
         .eq('session_id', sessionId)
-        .eq('question_count', currentCount); // Only update if count matches
+        .select()
+        .single();
       
       if (updateError) {
           console.error('Failed to update session:', updateError);
@@ -284,6 +285,10 @@ Example of correct formatting:
         
         newCount = latestSession?.question_count || newCount;
       }
+      else if (updatedSession) {
+  // Use the returned count from the update
+  newCount = updatedSession.question_count;
+}
       
     } else {
       // For logged users, just update conversation history
