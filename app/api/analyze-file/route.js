@@ -114,6 +114,10 @@ async function extractTextFromPDF(base64Data) {
   try {
     console.log('Starting PDF text extraction...');
     
+    // Dynamic import to avoid build issues
+    const pdf = await import('pdf-parse');
+    const pdfParse = pdf.default || pdf;
+    
     // Clean base64 string
     let base64 = base64Data;
     if (base64.includes('base64,')) {
@@ -123,8 +127,11 @@ async function extractTextFromPDF(base64Data) {
     const pdfBuffer = Buffer.from(base64, 'base64');
     console.log('PDF buffer size:', pdfBuffer.length);
     
-    // Extract text from PDF
-    const data = await pdf(pdfBuffer);
+    // Extract text from PDF with options to prevent test file loading
+    const data = await pdfParse(pdfBuffer, {
+      // Disable test file loading
+      max: 0
+    });
     
     console.log('PDF extraction complete:', {
       pages: data.numpages,
