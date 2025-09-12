@@ -261,7 +261,7 @@ Example of correct formatting:
       ].slice(-10); // Keep last 5 exchanges
       
       // FIX 3: Use optimistic locking to prevent race conditions
-      const { error: updateError } = await supabase
+      const { data: updatedSession, error: updateError } = await supabase
         .from('sessions')
         .update({ 
           question_count: newCount,
@@ -273,16 +273,19 @@ Example of correct formatting:
         .eq('question_count', currentCount); // Only update if count matches
       
       if (updateError) {
+          console.error('Failed to update session:', updateError);
         // Race condition - someone else updated, fetch latest count
         console.log('Concurrent update detected, fetching latest count');
         const { data: latestSession } = await supabase
           .from('sessions')
           .select('question_count')
           .eq('session_id', sessionId)
-          .single();
+          .single();https://github.com/bikashrajgurupm/purplegiraffe/blob/main/app/api/chat/route.js
         
         newCount = latestSession?.question_count || newCount;
       }
+      else if (updatedSession){
+        newCount = updatedSession.question_count;
     } else {
       // For logged users, just update conversation history
       const updatedHistory = [
