@@ -921,17 +921,6 @@ export default function Home() {
                         </svg>
                       )}
                     </button>
-                    <span style={{
-                      fontSize: '10px',
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      color: 'white',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      fontWeight: '600',
-                      letterSpacing: '0.5px'
-                    }}>
-                      BETA
-                    </span>
                   </div>
                 )}
                   
