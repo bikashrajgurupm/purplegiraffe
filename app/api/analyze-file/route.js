@@ -116,13 +116,34 @@ async function extractTextFromPDF(base64Data) {
     
     // Since pdf-parse has build issues, we'll provide a fallback
     // In production, you might want to use a PDF parsing API service
+      let base64 = base64Data;
+      if (base64.includes('base64,')) {
+      base64 = base64.split('base64,')[1];
+    }
+
+    // Convert base64 to buffer
+    const pdfBuffer = Buffer.from(base64, 'base64');
+    console.log('PDF buffer size:', pdfBuffer.length);
+    
+    // Parse PDF
+    const data = await pdf(pdfBuffer);
+    
+    console.log('PDF extraction complete:', {
+      pages: data.numpages,
+      textLength: data.text.length
+    });
+
+    // Assess quality of extracted text
+    const quality = assessTextQuality(data.text);
+
     
     return {
-      success: false,
-      text: '',
-      quality: 'poor',
-      reason: 'PDF text extraction is currently limited. Please copy and paste the key metrics from your PDF.',
-      pages: 0
+      success: true,
+      text: data.text || '',
+      quality: quality.quality,
+      reason: quality.reason,
+      pages: data.numpages,
+      info: data.info // Contains metadata like title, author, etc.
     };
     
   } catch (error) {
