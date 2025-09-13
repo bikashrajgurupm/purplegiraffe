@@ -1,9 +1,10 @@
-// app/page.js - COMPLETE FILE WITH PDF SUPPORT
+// app/page.js - COMPLETE WITH CHAT HISTORY
 
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import './globals.css';
 import PricingTiers from './components/PricingTiers';
+import ChatHistory from './components/ChatHistory';
 
 export default function Home() {
   const [messages, setMessages] = useState([]);
@@ -19,6 +20,10 @@ export default function Home() {
   const [showVerificationMessage, setShowVerificationMessage] = useState(false);
   const [showMobilePricing, setShowMobilePricing] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  
+  // Chat history states
+  const [showChatHistory, setShowChatHistory] = useState(false);
+  const [loadingChat, setLoadingChat] = useState(false);
   
   // File upload states
   const [uploading, setUploading] = useState(false);
@@ -52,6 +57,15 @@ export default function Home() {
     
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Show/hide chat history based on user login and screen size
+  useEffect(() => {
+    if (user && !isMobile) {
+      setShowChatHistory(true);
+    } else if (!user) {
+      setShowChatHistory(false);
+    }
+  }, [user, isMobile]);
 
   useEffect(() => {
     // Check if user is logged in
@@ -152,6 +166,66 @@ export default function Home() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Load previous chat from history
+  const loadPreviousChat = async (chat) => {
+    setLoadingChat(true);
+    try {
+      const token = localStorage.getItem('pg_token');
+      const response = await fetch(`/api/chat-history/${chat.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Set the session ID
+        setSessionId(chat.session_id);
+        localStorage.setItem('pg_session_id', chat.session_id);
+        
+        // Convert messages to the format your app uses
+        const formattedMessages = [];
+        data.messages.forEach(msg => {
+          formattedMessages.push({
+            id: `${msg.id}-q`,
+            type: 'user',
+            content: msg.question
+          });
+          formattedMessages.push({
+            id: `${msg.id}-a`,
+            type: 'bot',
+            content: msg.answer
+          });
+        });
+        
+        setMessages(formattedMessages);
+        
+        // Reset question count for logged-in users
+        if (user) {
+          setQuestionCount(0);
+          setIsBlocked(false);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load chat:', error);
+      const errorMessage = {
+        id: Date.now().toString(),
+        type: 'bot',
+        content: '❌ Failed to load previous chat. Please try again.'
+      };
+      setMessages([errorMessage]);
+    } finally {
+      setLoadingChat(false);
+    }
+  };
+
+  // Handle chat deletion
+  const handleChatDeleted = (deletedChatId) => {
+    // If the deleted chat is the current one, start a new chat
+    // The ChatHistory component handles the actual deletion
+  };
 
   // File handling functions
   const handleFileSelect = async (event) => {
@@ -517,6 +591,7 @@ export default function Home() {
     localStorage.removeItem('pg_token');
     localStorage.removeItem('pg_user');
     setUser(null);
+    setShowChatHistory(false);
     startNewChat();
   };
 
@@ -598,10 +673,68 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="main-container">
+      {/* Mobile chat history toggle */}
+      {user && isMobile && (
+        <button 
+          className="toggle-history-btn"
+          onClick={() => setShowChatHistory(!showChatHistory)}
+          style={{
+            position: 'fixed',
+            left: showChatHistory ? '270px' : '10px',
+            top: '70px',
+            zIndex: 101,
+            background: '#8B5CF6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '50%',
+            width: '40px',
+            height: '40px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            cursor: 'pointer',
+            transition: 'left 0.3s'
+          }}
+        >
+          {showChatHistory ? '✕' : '📋'}
+        </button>
+      )}
+
+      <div className={`main-container ${showChatHistory ? 'with-history' : ''}`}>
+        {/* Chat History Sidebar */}
+        {user && (
+          <div className={`chat-history ${showChatHistory ? 'show' : ''}`}>
+            <ChatHistory 
+              user={user}
+              sessionId={sessionId}
+              onSelectChat={loadPreviousChat}
+              onDeleteChat={handleChatDeleted}
+            />
+          </div>
+        )}
+
         {/* Main Chat Area */}
         <main className="chat-container">
-          <div className="chat-content">
+          {loadingChat && (
+            <div style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              textAlign: 'center',
+              zIndex: 10
+            }}>
+              <div className="typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <p style={{marginTop: '10px', color: '#6B7280'}}>Loading chat...</p>
+            </div>
+          )}
+          
+          <div className="chat-content" style={{opacity: loadingChat ? 0.5 : 1}}>
             {messages.length === 0 ? (
               // Welcome Screen
               <div className="welcome-screen">
@@ -753,7 +886,7 @@ export default function Home() {
                   onChange={(e) => setInput(e.target.value)}
                   placeholder={isBlocked && !user ? "Sign up to continue chatting..." : "Ask about monetization, ad networks, eCPM optimization..."}
                   className="message-input"
-                  disabled={loading || (isBlocked && !user)}
+                  disabled={loading || (isBlocked && !user) || loadingChat}
                 />
                 
                 {/* File Upload Input (hidden) */}
@@ -772,7 +905,7 @@ export default function Home() {
                       type="button"
                       className="file-upload-btn"
                       onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading || loading}
+                      disabled={uploading || loading || loadingChat}
                       title="Upload screenshot or PDF report"
                     >
                       {uploading ? (
@@ -793,7 +926,7 @@ export default function Home() {
                   <button 
                     type="submit" 
                     className="send-button" 
-                    disabled={loading || !input.trim() || (isBlocked && !user)}
+                    disabled={loading || !input.trim() || (isBlocked && !user) || loadingChat}
                   >
                     {loading && !uploading ? (
                       <svg className="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
