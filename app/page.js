@@ -1,4 +1,4 @@
-// app/page.js - WITH FILE UPLOAD FEATURE
+// app/page.js - COMPLETE FILE WITH PDF SUPPORT
 
 'use client';
 import { useState, useEffect, useRef } from 'react';
@@ -176,11 +176,13 @@ export default function Home() {
       return;
     }
 
-    // Show file preview message
+    // Show file preview message with appropriate icon and description
     const fileMessage = {
       id: Date.now().toString(),
       type: 'user',
-      content: `📎 Uploading: ${file.name}`,
+      content: file.type === 'application/pdf' 
+        ? `📄 Uploading PDF: ${file.name}` 
+        : `📎 Uploading: ${file.name}`,
       file: {
         name: file.name,
         type: file.type,
@@ -216,6 +218,12 @@ export default function Home() {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
+      // Determine file type for better messaging
+      const fileType = file.type.includes('pdf') ? 'PDF document' : 'screenshot';
+      const analysisMessage = file.type.includes('pdf') 
+        ? `Analyze this PDF report and provide insights about the monetization metrics shown.`
+        : `Analyze this screenshot and provide insights about the monetization metrics shown.`;
+
       // Send to backend for analysis
       const response = await fetch('/api/analyze-file', {
         method: 'POST',
@@ -227,16 +235,30 @@ export default function Home() {
             data: base64
           },
           sessionId,
-          message: `Analyze this ${file.type.includes('image') ? 'screenshot' : 'document'} and provide insights about the monetization metrics shown.`
+          message: analysisMessage
         })
       });
 
       const data = await response.json();
 
+      // Customize response based on extraction quality
+      let botContent = data.response || 'I\'ve analyzed your file. Please let me know what specific metrics or issues you\'d like to discuss.';
+      
+      // Add extraction quality indicator for PDFs
+      if (file.type === 'application/pdf' && data.extractionQuality) {
+        if (data.extractionQuality === 'poor') {
+          botContent = `⚠️ I had difficulty reading the PDF clearly. ${botContent}`;
+        } else if (data.extractionQuality === 'partial') {
+          botContent = `📊 I extracted partial data from your PDF. ${botContent}`;
+        } else if (data.extractionQuality === 'good' && data.metricsFound) {
+          botContent = `✅ Successfully analyzed your PDF report. ${botContent}`;
+        }
+      }
+
       const botMessage = {
         id: (Date.now() + 1).toString(),
         type: 'bot',
-        content: data.response || data.error || 'I\'ve analyzed your file. Please let me know what specific metrics or issues you\'d like to discuss.'
+        content: botContent
       };
 
       setMessages(prev => [...prev, botMessage]);
@@ -246,7 +268,9 @@ export default function Home() {
       const errorMessage = {
         id: (Date.now() + 1).toString(),
         type: 'bot',
-        content: '❌ Sorry, I couldn\'t process the file. Please try again or describe what you\'re seeing in the image/document.'
+        content: file.type === 'application/pdf' 
+          ? '❌ Sorry, I couldn\'t process the PDF. Please try copying and pasting the key metrics from your report, or upload a clearer file.'
+          : '❌ Sorry, I couldn\'t process the file. Please try again or describe what you\'re seeing in the image.'
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
@@ -316,7 +340,7 @@ export default function Home() {
     
     setTimeout(() => {
       const welcomeMessage = user ? 
-        "👋 New chat started! How can I help you optimize your monetization today? You can now upload screenshots of your ad dashboards for analysis!" :
+        "👋 New chat started! How can I help you optimize your monetization today? You can upload screenshots or PDF reports for analysis!" :
         `👋 Welcome to Purple Giraffe! I'm your AI monetization expert. You have ${QUESTION_LIMIT - questionCount} free questions remaining.`;
       
       setMessages([{
@@ -476,7 +500,7 @@ export default function Home() {
         const welcomeMessage = {
           id: Date.now().toString(),
           type: 'bot',
-          content: `🎉 Welcome back! You now have unlimited access and can upload screenshots for analysis. How can I help you optimize your monetization today?`
+          content: `🎉 Welcome back! You now have unlimited access and can upload screenshots or PDF reports for analysis. How can I help you optimize your monetization today?`
         };
         setMessages(prev => [...prev, welcomeMessage]);
       } else {
@@ -598,7 +622,9 @@ export default function Home() {
                 
                 {user && (
                   <div className="question-counter-display" style={{background: '#F0FDF4', borderColor: '#10B981'}}>
-                    <p style={{color: '#10B981'}}>✨ Pro tip: You can upload screenshots of your ad dashboards for detailed analysis!</p>
+                    <p style={{color: '#10B981'}}>
+                      ✨ Pro tip: Upload screenshots or PDF reports from your ad dashboards for detailed analysis!
+                    </p>
                   </div>
                 )}
                 
@@ -620,91 +646,89 @@ export default function Home() {
               </div>
             ) : (
               // Messages
-              // Messages
-<div className="messages">
-  {messages.map((message) => (
-    <div key={message.id} className={`message-wrapper ${message.type}`}>
-      <div className="message-container">
-        {message.type === 'bot' && (
-          <div className="avatar">
-            <img src="/logo.png" alt="PurpleGiraffe" style={{ width: '24px', height: '24px' }} />
-          </div>
-        )}
-        <div className="message-content">
-          {message.content}
-
-          {/* File preview for uploaded files */}
-          {message.file && (
-            <>
-              {message.file.type.startsWith('image/') && message.file.url ? (
-                <div className="image-preview">
-                  <img src={message.file.url} alt={message.file.name} />
-                </div>
-              ) : message.file.type === 'application/pdf' ? (
-                <div className="file-preview pdf-preview">
-                  <div className="file-preview-icon">📄</div>
-                  <div className="file-preview-info">
-                    <div className="file-preview-name">{message.file.name}</div>
-                    <div className="file-preview-size">
-                      PDF • {formatFileSize(message.file.size)}
+              <div className="messages">
+                {messages.map((message) => (
+                  <div key={message.id} className={`message-wrapper ${message.type}`}>
+                    <div className="message-container">
+                      {message.type === 'bot' && (
+                        <div className="avatar">
+                          <img src="/logo.png" alt="PurpleGiraffe" style={{width: '24px', height: '24px'}} />
+                        </div>
+                      )}
+                      <div className="message-content">
+                        {message.content}
+                        
+                        {/* Enhanced file preview for uploaded files */}
+                        {message.file && (
+                          <>
+                            {message.file.type.startsWith('image/') && message.file.url ? (
+                              <div className="image-preview">
+                                <img src={message.file.url} alt={message.file.name} />
+                              </div>
+                            ) : message.file.type === 'application/pdf' ? (
+                              <div className="file-preview pdf-preview">
+                                <div className="file-preview-icon">📄</div>
+                                <div className="file-preview-info">
+                                  <div className="file-preview-name">{message.file.name}</div>
+                                  <div className="file-preview-size">
+                                    PDF • {formatFileSize(message.file.size)}
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="file-preview">
+                                <div className="file-preview-icon">📎</div>
+                                <div className="file-preview-info">
+                                  <div className="file-preview-name">{message.file.name}</div>
+                                  <div className="file-preview-size">{formatFileSize(message.file.size)}</div>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ) : (
-                <div className="file-preview">
-                  <div className="file-preview-icon">📎</div>
-                  <div className="file-preview-info">
-                    <div className="file-preview-name">{message.file.name}</div>
-                    <div className="file-preview-size">{formatFileSize(message.file.size)}</div>
+                ))}
+                
+                {uploading && (
+                  <div className="message-wrapper bot">
+                    <div className="message-container">
+                      <div className="avatar">
+                        <img src="/logo.png" alt="PurpleGiraffe" style={{width: '24px', height: '24px'}} />
+                      </div>
+                      <div className="message-content">
+                        <div className="processing-file">
+                          <svg className="spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 12a9 9 0 11-6.219-8.56"/>
+                          </svg>
+                          <span>Analyzing your file...</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  ))}
-
-  {/* Status indicators shown once, after messages */}
-  {uploading && (
-    <div className="message-wrapper bot">
-      <div className="message-container">
-        <div className="avatar">
-          <img src="/logo.png" alt="PurpleGiraffe" style={{ width: '24px', height: '24px' }} />
-        </div>
-        <div className="message-content">
-          <div className="processing-file">
-            <svg className="spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 12a9 9 0 11-6.219-8.56"></path>
-            </svg>
-            <span>Analyzing your file...</span>
+                )}
+                
+                {loading && !uploading && (
+                  <div className="message-wrapper bot">
+                    <div className="message-container">
+                      <div className="avatar">
+                        <img src="/logo.png" alt="PurpleGiraffe" style={{width: '24px', height: '24px'}} />
+                      </div>
+                      <div className="message-content">
+                        <div className="typing-indicator">
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
           </div>
-        </div>
-      </div>
-    </div>
-  )}
-
-  {loading && !uploading && (
-    <div className="message-wrapper bot">
-      <div className="message-container">
-        <div className="avatar">
-          <img src="/logo.png" alt="PurpleGiraffe" style={{ width: '24px', height: '24px' }} />
-        </div>
-        <div className="message-content">
-          <div className="typing-indicator">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-        </div>
-      </div>
-    </div>
-  )}
-
-  <div ref={messagesEndRef} />
-</div>
-
 
           {/* Input Area */}
           <div className="input-wrapper">
@@ -749,7 +773,7 @@ export default function Home() {
                       className="file-upload-btn"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploading || loading}
-                      title="Upload screenshot or PDF"
+                      title="Upload screenshot or PDF report"
                     >
                       {uploading ? (
                         <svg className="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
