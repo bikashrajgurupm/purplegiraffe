@@ -633,29 +633,33 @@ export default function Home() {
                         {message.content}
                         
                         {/* File preview for uploaded files */}
-                        {message.file && (
+                      {message.file && (
                           <>
-                            {message.file.type.startsWith('image/') && message.file.url ? (
-                              <div className="image-preview">
-                                <img src={message.file.url} alt={message.file.name} />
-                              </div>
-                            ) : (
-                              <div className="file-preview">
-                                <div className="file-preview-icon">
-                                  📄
+                          {message.file.type.startsWith('image/') && message.file.url ? (
+                            <div className="image-preview">
+                              <img src={message.file.url} alt={message.file.name} />
+                            </div>
+                          ) : message.file.type === 'application/pdf' ? (
+                            <div className="file-preview pdf-preview">
+                              <div className="file-preview-icon">📄</div>
+                              <div className="file-preview-info">
+                                <div className="file-preview-name">{message.file.name}</div>
+                                <div className="file-preview-size">
+                                  PDF • {formatFileSize(message.file.size)}
                                 </div>
-                                <div className="file-preview-info">
-                                  <div className="file-preview-name">{message.file.name}</div>
-                                  <div className="file-preview-size">{formatFileSize(message.file.size)}</div>
-                                </div>
                               </div>
-                            )}
+                            </div>
+                          ) : (
+                            <div className="file-preview">
+                              <div className="file-preview-icon">📎</div>
+                              <div className="file-preview-info">
+                                <div className="file-preview-name">{message.file.name}</div>
+                                <div className="file-preview-size">{formatFileSize(message.file.size)}</div>
+                              </div>
+                            </div>
+                          )}
                           </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                          )}
                 
                 {uploading && (
                   <div className="message-wrapper bot">
