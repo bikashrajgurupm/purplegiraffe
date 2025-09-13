@@ -172,8 +172,19 @@ function extractMetrics(text) {
     ctr: /(?:ctr|click[\s-]*through[\s-]*rate)[:\s]*([\d]+\.?\d*)%?/gi,
     clicks: /(?:clicks?)[:\s]*([\d,]+)/gi
   };
+
+  // ADD PDF-specific patterns here
+  const pdfTablePatterns = {
+    adNetwork: /(?:Network|Provider|Source)[\s:]+([A-Za-z\s]+)[\s]+(?:\$?[\d,]+|\d+%)/gi,
+    dailyRevenue: /(?:Date|Day)[\s:]+[\d\/\-]+[\s]+.*?\$?([\d,]+\.?\d*)/gi,
+    sessionRPM: /(?:RPM|Session\s*RPM)[:\s]*\$?([\d,]+\.?\d*)/gi,
+    arpdau: /(?:ARPDAU|ARPU)[:\s]*\$?([\d,]+\.?\d*)/gi
+  };
+
+  // Combine both pattern sets
+  const allPatterns = { ...patterns, ...pdfTablePatterns };
   
-  for (const [key, pattern] of Object.entries(patterns)) {
+  for (const [key, pattern] of Object.entries(allPatterns)) {
     const matches = [...text.matchAll(pattern)];
     if (matches.length > 0) {
       metrics[key] = matches.map(m => m[1]);
