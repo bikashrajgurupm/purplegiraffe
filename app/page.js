@@ -620,85 +620,91 @@ export default function Home() {
               </div>
             ) : (
               // Messages
-              <div className="messages">
-                {messages.map((message) => (
-                  <div key={message.id} className={`message-wrapper ${message.type}`}>
-                    <div className="message-container">
-                      {message.type === 'bot' && (
-                        <div className="avatar">
-                          <img src="/logo.png" alt="PurpleGiraffe" style={{width: '24px', height: '24px'}} />
-                        </div>
-                      )}
-                      <div className="message-content">
-                        {message.content}
-                        
-                        {/* File preview for uploaded files */}
-                      {message.file && (
-                          <>
-                          {message.file.type.startsWith('image/') && message.file.url ? (
-                            <div className="image-preview">
-                              <img src={message.file.url} alt={message.file.name} />
-                            </div>
-                          ) : message.file.type === 'application/pdf' ? (
-                            <div className="file-preview pdf-preview">
-                              <div className="file-preview-icon">📄</div>
-                              <div className="file-preview-info">
-                                <div className="file-preview-name">{message.file.name}</div>
-                                <div className="file-preview-size">
-                                  PDF • {formatFileSize(message.file.size)}
-                                </div>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="file-preview">
-                              <div className="file-preview-icon">📎</div>
-                              <div className="file-preview-info">
-                                <div className="file-preview-name">{message.file.name}</div>
-                                <div className="file-preview-size">{formatFileSize(message.file.size)}</div>
-                              </div>
-                            </div>
-                          )}
-                          </>
-                          )}
-                
-                {uploading && (
-                  <div className="message-wrapper bot">
-                    <div className="message-container">
-                      <div className="avatar">
-                        <img src="/logo.png" alt="PurpleGiraffe" style={{width: '24px', height: '24px'}} />
-                      </div>
-                      <div className="message-content">
-                        <div className="processing-file">
-                          <svg className="spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M21 12a9 9 0 11-6.219-8.56"/>
-                          </svg>
-                          <span>Analyzing your file...</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {loading && !uploading && (
-                  <div className="message-wrapper bot">
-                    <div className="message-container">
-                      <div className="avatar">
-                        <img src="/logo.png" alt="PurpleGiraffe" style={{width: '24px', height: '24px'}} />
-                      </div>
-                      <div className="message-content">
-                        <div className="typing-indicator">
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            )}
+              // Messages
+<div className="messages">
+  {messages.map((message) => (
+    <div key={message.id} className={`message-wrapper ${message.type}`}>
+      <div className="message-container">
+        {message.type === 'bot' && (
+          <div className="avatar">
+            <img src="/logo.png" alt="PurpleGiraffe" style={{ width: '24px', height: '24px' }} />
           </div>
+        )}
+        <div className="message-content">
+          {message.content}
+
+          {/* File preview for uploaded files */}
+          {message.file && (
+            <>
+              {message.file.type.startsWith('image/') && message.file.url ? (
+                <div className="image-preview">
+                  <img src={message.file.url} alt={message.file.name} />
+                </div>
+              ) : message.file.type === 'application/pdf' ? (
+                <div className="file-preview pdf-preview">
+                  <div className="file-preview-icon">📄</div>
+                  <div className="file-preview-info">
+                    <div className="file-preview-name">{message.file.name}</div>
+                    <div className="file-preview-size">
+                      PDF • {formatFileSize(message.file.size)}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="file-preview">
+                  <div className="file-preview-icon">📎</div>
+                  <div className="file-preview-info">
+                    <div className="file-preview-name">{message.file.name}</div>
+                    <div className="file-preview-size">{formatFileSize(message.file.size)}</div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  ))}
+
+  {/* Status indicators shown once, after messages */}
+  {uploading && (
+    <div className="message-wrapper bot">
+      <div className="message-container">
+        <div className="avatar">
+          <img src="/logo.png" alt="PurpleGiraffe" style={{ width: '24px', height: '24px' }} />
+        </div>
+        <div className="message-content">
+          <div className="processing-file">
+            <svg className="spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 12a9 9 0 11-6.219-8.56"></path>
+            </svg>
+            <span>Analyzing your file...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {loading && !uploading && (
+    <div className="message-wrapper bot">
+      <div className="message-container">
+        <div className="avatar">
+          <img src="/logo.png" alt="PurpleGiraffe" style={{ width: '24px', height: '24px' }} />
+        </div>
+        <div className="message-content">
+          <div className="typing-indicator">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )}
+
+  <div ref={messagesEndRef} />
+</div>
+
 
           {/* Input Area */}
           <div className="input-wrapper">
