@@ -913,11 +913,25 @@ export default function Home() {
                           <path d="M21 12a9 9 0 11-6.219-8.56"/>
                         </svg>
                       ) : (
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                          <polyline points="17 8 12 3 7 8"/>
-                          <line x1="12" y1="3" x2="12" y2="15"/>
-                        </svg>
+                        <><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                          </svg><span style={{
+                            position: 'absolute',
+                            top: '-8px',
+                            right: '-20px',
+                            fontSize: '9px',
+                            background: '#8B5CF6',
+                            color: 'white',
+                            padding: '2px 4px',
+                            borderRadius: '4px',
+                            fontWeight: '600',
+                            letterSpacing: '0.5px'
+                          }}>
+                              BETA
+                            </span></>
+                    
                       )}
                     </button>
                   )}
