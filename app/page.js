@@ -756,7 +756,7 @@ export default function Home() {
                 {user && (
                   <div className="question-counter-display" style={{background: '#F0FDF4', borderColor: '#10B981'}}>
                     <p style={{color: '#10B981'}}>
-                      ✨ Pro tip: Upload screenshots or PDF reports from your ad dashboards for detailed analysis!
+                      ✨ Beta : Upload Screenshots and PDF is in beta testing phase and might not give expected results
                     </p>
                   </div>
                 )}
