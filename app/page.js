@@ -1,1099 +1,659 @@
-// app/page.js - COMPLETE WITH CHAT HISTORY
-
+// app/page.js
 'use client';
-import { useState, useEffect, useRef } from 'react';
-import './globals.css';
-import PricingTiers from './components/PricingTiers';
-import ChatHistory from './components/ChatHistory';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+
+const PROTOTYPES = [
+  {
+    id: 'copilot',
+    index: 'P–01',
+    status: 'live',
+    statusLabel: 'Live',
+    name: 'Purple Giraffe Copilot',
+    description:
+      'Answers FAQs and debugs live issues for adtech and ad-monetization teams: eCPM drops, waterfall setup, fill-rate troubleshooting.',
+    specs: ['Chat + file analysis', 'Built-in knowledge base', 'Free to try'],
+    href: '/apps/copilot',
+    cta: 'Try the prototype',
+  },
+  {
+    id: 'healthcare',
+    index: 'P–02',
+    status: 'planned',
+    statusLabel: 'Planned',
+    name: 'Healthcare & clinics',
+    description:
+      'Patient FAQs, appointment triage, and intake support for clinics and small practices.',
+    specs: ['Patient-facing chat', 'Appointment triage', 'Intake forms'],
+    href: null,
+    cta: null,
+  },
+  {
+    id: 'finance',
+    index: 'P–03',
+    status: 'planned',
+    statusLabel: 'Planned',
+    name: 'Personal finance',
+    description:
+      "Portfolio tracking and plain-language financial Q&A, built around one person's real accounts and goals.",
+    specs: ['Portfolio dashboard', 'Plain-language Q&A', 'Built for one user'],
+    href: null,
+    cta: null,
+  },
+  {
+    id: 'yours',
+    index: 'P–04',
+    status: 'open',
+    statusLabel: 'Your idea',
+    name: 'Something else',
+    description:
+      'Not seeing your use case? That is normal this early. Tell us what you need below.',
+    specs: [],
+    href: '#request',
+    cta: 'Request a build',
+  },
+];
+
+const USE_CASE_OPTIONS = [
+  'AdTech / Purple Giraffe Copilot',
+  'Healthcare & clinics',
+  'Personal finance',
+  'Something else',
+];
 
 export default function Home() {
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [sessionId, setSessionId] = useState('');
-  const [questionCount, setQuestionCount] = useState(0);
-  const [showSidebar, setShowSidebar] = useState(true);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, setAuthMode] = useState('signup');
-  const [user, setUser] = useState(null);
-  const [isBlocked, setIsBlocked] = useState(false);
-  const [showVerificationMessage, setShowVerificationMessage] = useState(false);
-  const [showMobilePricing, setShowMobilePricing] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  
-  // Chat history states
-  const [showChatHistory, setShowChatHistory] = useState(false);
-  const [loadingChat, setLoadingChat] = useState(false);
-  
-  // File upload states
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef(null);
-  const messagesEndRef = useRef(null);
+  const [returningUser, setReturningUser] = useState(null);
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    company: '',
+    useCase: '',
+    message: '',
+  });
+  const [status, setStatus] = useState('idle'); // idle | submitting | success | error
+  const [errorMsg, setErrorMsg] = useState('');
 
-  // Auth form states
-  const [authEmail, setAuthEmail] = useState('');
-  const [authPassword, setAuthPassword] = useState('');
-  const [authError, setAuthError] = useState('');
-  const [authLoading, setAuthLoading] = useState(false);
-
-  // Question limit
-  const QUESTION_LIMIT = 10;
-
-  // File upload constraints
-  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
-  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-
-  // Check for mobile on mount and resize
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-      if (window.innerWidth <= 768) {
-        setShowSidebar(false);
+    try {
+      const cached = localStorage.getItem('pg_user');
+      if (cached) {
+        const user = JSON.parse(cached);
+        if (user?.email) setReturningUser(user.email);
       }
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    
-    return () => window.removeEventListener('resize', checkMobile);
+    } catch (e) {
+      // malformed or missing localStorage data — safe to ignore
+    }
   }, []);
 
-  // Show/hide chat history based on user login and screen size
-  useEffect(() => {
-    if (user && !isMobile) {
-      setShowChatHistory(true);
-    } else if (!user) {
-      setShowChatHistory(false);
-    }
-  }, [user, isMobile]);
+  const handleChange = (field) => (e) =>
+    setForm((f) => ({ ...f, [field]: e.target.value }));
 
-  useEffect(() => {
-    // Check if user is logged in
-    const token = localStorage.getItem('pg_token');
-    const userData = localStorage.getItem('pg_user');
-    if (token && userData) {
-      const parsedUser = JSON.parse(userData);
-      if (parsedUser.email_verified) {
-        setUser(parsedUser);
-        setIsBlocked(false);
-      }
-    }
-
-    // Handle verification redirect
-    const urlParams = new URLSearchParams(window.location.search);
-    const verified = urlParams.get('verified');
-    const email = urlParams.get('email');
-    const error = urlParams.get('error');
-    
-    if (verified === 'true' && email) {
-      const successMessage = {
-        id: Date.now().toString(),
-        type: 'bot',
-        content: `✅ Email verified successfully! You can now log in with ${decodeURIComponent(email)} to access unlimited questions as a Community Member.`
-      };
-      setMessages([successMessage]);
-      
-      setAuthMode('login');
-      setShowAuthModal(true);
-      setAuthEmail(decodeURIComponent(email));
-      
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-    
-    if (error) {
-      let errorMessage = '';
-      switch(error) {
-        case 'invalid-token':
-          errorMessage = '❌ Invalid verification link. Please sign up again.';
-          break;
-        case 'token-expired':
-          errorMessage = '❌ Verification link expired. Please sign up again to receive a new link.';
-          break;
-        case 'already-verified':
-          errorMessage = '✅ Email already verified. Please log in.';
-          setAuthMode('login');
-          setShowAuthModal(true);
-          break;
-        case 'verification-failed':
-          errorMessage = '❌ Verification failed. Please try again or contact support.';
-          break;
-        default:
-          errorMessage = '❌ An error occurred. Please try again.';
-      }
-      
-      if (errorMessage) {
-        const message = {
-          id: Date.now().toString(),
-          type: 'bot',
-          content: errorMessage
-        };
-        setMessages([message]);
-      }
-      
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-
-    // Initialize session
-    const initSession = async () => {
-      let storedSessionId = localStorage.getItem('pg_session_id');
-      if (!storedSessionId) {
-        storedSessionId = Math.random().toString(36).substring(2) + Date.now().toString(36);
-        localStorage.setItem('pg_session_id', storedSessionId);
-      }
-      setSessionId(storedSessionId);
-
-      try {
-        const response = await fetch('/api/session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionId: storedSessionId })
-        });
-        const data = await response.json();
-        
-        setQuestionCount(data.questionCount || 0);
-        
-        if (data.questionCount >= QUESTION_LIMIT && !user) {
-          setIsBlocked(true);
-        }
-      } catch (error) {
-        console.error('Failed to load session:', error);
-      }
-    };
-
-    initSession();
-  }, []);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  // Load previous chat from history
-  const loadPreviousChat = async (chat) => {
-    setLoadingChat(true);
-    try {
-      const token = localStorage.getItem('pg_token');
-      const response = await fetch(`/api/chat-history/${chat.id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        
-        // Set the session ID
-        setSessionId(chat.session_id);
-        localStorage.setItem('pg_session_id', chat.session_id);
-        
-        // Convert messages to the format your app uses
-        const formattedMessages = [];
-        data.messages.forEach(msg => {
-          formattedMessages.push({
-            id: `${msg.id}-q`,
-            type: 'user',
-            content: msg.question
-          });
-          formattedMessages.push({
-            id: `${msg.id}-a`,
-            type: 'bot',
-            content: msg.answer
-          });
-        });
-        
-        setMessages(formattedMessages);
-        
-        // Reset question count for logged-in users
-        if (user) {
-          setQuestionCount(0);
-          setIsBlocked(false);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load chat:', error);
-      const errorMessage = {
-        id: Date.now().toString(),
-        type: 'bot',
-        content: '❌ Failed to load previous chat. Please try again.'
-      };
-      setMessages([errorMessage]);
-    } finally {
-      setLoadingChat(false);
-    }
-  };
-
-  // Handle chat deletion
-  const handleChatDeleted = (deletedChatId) => {
-    // If the deleted chat is the current one, start a new chat
-    // The ChatHistory component handles the actual deletion
-  };
-
-  // File handling functions
-  const handleFileSelect = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    // Only logged-in users can upload
-    if (!user) {
-      alert('Please log in to upload files');
-      return;
-    }
-
-    // Validate file type
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      alert('Please upload an image (JPEG, PNG, GIF, WebP) or PDF file');
-      return;
-    }
-
-    // Validate file size
-    if (file.size > MAX_FILE_SIZE) {
-      alert('File size must be less than 10MB');
-      return;
-    }
-
-    // Show file preview message with appropriate icon and description
-    const fileMessage = {
-      id: Date.now().toString(),
-      type: 'user',
-      content: file.type === 'application/pdf' 
-        ? `📄 Uploading PDF: ${file.name}` 
-        : `📎 Uploading: ${file.name}`,
-      file: {
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        url: file.type.startsWith('image/') ? URL.createObjectURL(file) : null
-      }
-    };
-    setMessages(prev => [...prev, fileMessage]);
-
-    // Process the file
-    await processFileWithAI(file);
-    
-    // Clear the file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const processFileWithAI = async (file) => {
-    setUploading(true);
-    setLoading(true);
-
-    try {
-      // Convert file to base64
-      const base64 = await fileToBase64(file);
-
-      const headers = {
-        'Content-Type': 'application/json'
-      };
-
-      const token = localStorage.getItem('pg_token');
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      // Determine file type for better messaging
-      const fileType = file.type.includes('pdf') ? 'PDF document' : 'screenshot';
-      const analysisMessage = file.type.includes('pdf') 
-        ? `Analyze this PDF report and provide insights about the monetization metrics shown.`
-        : `Analyze this screenshot and provide insights about the monetization metrics shown.`;
-
-      // Send to backend for analysis
-      const response = await fetch('/api/analyze-file', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          file: {
-            name: file.name,
-            type: file.type,
-            data: base64
-          },
-          sessionId,
-          message: analysisMessage
-        })
-      });
-
-      const data = await response.json();
-
-      // Customize response based on extraction quality
-      let botContent = data.response || 'I\'ve analyzed your file. Please let me know what specific metrics or issues you\'d like to discuss.';
-      
-      // Add extraction quality indicator for PDFs
-      if (file.type === 'application/pdf' && data.extractionQuality) {
-        if (data.extractionQuality === 'poor') {
-          botContent = `⚠️ I had difficulty reading the PDF clearly. ${botContent}`;
-        } else if (data.extractionQuality === 'partial') {
-          botContent = `📊 I extracted partial data from your PDF. ${botContent}`;
-        } else if (data.extractionQuality === 'good' && data.metricsFound) {
-          botContent = `✅ Successfully analyzed your PDF report. ${botContent}`;
-        }
-      }
-
-      const botMessage = {
-        id: (Date.now() + 1).toString(),
-        type: 'bot',
-        content: botContent
-      };
-
-      setMessages(prev => [...prev, botMessage]);
-
-    } catch (error) {
-      console.error('File processing error:', error);
-      const errorMessage = {
-        id: (Date.now() + 1).toString(),
-        type: 'bot',
-        content: file.type === 'application/pdf' 
-          ? '❌ Sorry, I couldn\'t process the PDF. Please try copying and pasting the key metrics from your report, or upload a clearer file.'
-          : '❌ Sorry, I couldn\'t process the file. Please try again or describe what you\'re seeing in the image.'
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setUploading(false);
-      setLoading(false);
-    }
-  };
-
-  const fileToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = (error) => reject(error);
-    });
-  };
-
-  const formatFileSize = (bytes) => {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-  };
-
-  // Start new chat function
-  const startNewChat = async () => {
-    if (isBlocked && !user) {
-      setShowAuthModal(true);
-      return;
-    }
-    
-    setMessages([]);
-    setInput('');
-    
-    if (user) {
-      const newSessionId = Math.random().toString(36).substring(2) + Date.now().toString(36);
-      localStorage.setItem('pg_session_id', newSessionId);
-      setSessionId(newSessionId);
-      setQuestionCount(0);
-    } else {
-      try {
-        const response = await fetch('/api/session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionId })
-        });
-        const data = await response.json();
-        
-        setQuestionCount(data.questionCount || 0);
-        
-        if (data.questionCount >= QUESTION_LIMIT) {
-          setIsBlocked(true);
-          
-          setTimeout(() => {
-            setMessages([{
-              id: Date.now().toString(),
-              type: 'bot',
-              content: "🔒 You've reached the free question limit. Please sign up to continue our conversation and unlock unlimited access!"
-            }]);
-            setShowAuthModal(true);
-          }, 100);
-          return;
-        }
-      } catch (error) {
-        console.error('Failed to verify session:', error);
-      }
-    }
-    
-    setTimeout(() => {
-      const welcomeMessage = user ? 
-        "👋 New chat started! How can I help you optimize your monetization today? You can upload screenshots or PDF reports for analysis!" :
-        `👋 Welcome to Purple Giraffe! I'm your AI monetization expert. You have ${QUESTION_LIMIT - questionCount} free questions remaining.`;
-      
-      setMessages([{
-        id: Date.now().toString(),
-        type: 'bot',
-        content: welcomeMessage
-      }]);
-    }, 100);
+  const scrollToId = (id) => (e) => {
+    e.preventDefault();
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!input.trim() || loading) return;
-
-    if (isBlocked && !user) {
-      setShowAuthModal(true);
-      return;
-    }
-
-    const userMessage = {
-      id: Date.now().toString(),
-      type: 'user',
-      content: input
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    
-    const currentInput = input;
-    setInput('');
-    setLoading(true);
-
+    setStatus('submitting');
+    setErrorMsg('');
     try {
-      const headers = {
-        'Content-Type': 'application/json'
-      };
-
-      const token = localStorage.getItem('pg_token');
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ message: currentInput, sessionId })
-      });
-
-      const data = await response.json();
-      
-      const botMessage = {
-        id: (Date.now() + 1).toString(),
-        type: 'bot',
-        content: data.response || data.error || 'Sorry, something went wrong.'
-      };
-
-      setMessages(prev => [...prev, botMessage]);
-      
-      setQuestionCount(data.questionCount);
-      
-      if (data.questionCount >= QUESTION_LIMIT && !user) {
-        setIsBlocked(true);
-        setTimeout(() => {
-          setShowAuthModal(true);
-          const limitMessage = {
-            id: (Date.now() + 2).toString(),
-            type: 'bot',
-            content: "🔒 You've reached the free question limit. Please sign up to continue our conversation and unlock unlimited access!"
-          };
-          setMessages(prev => [...prev, limitMessage]);
-        }, 1000);
-      }
-      
-    } catch (error) {
-      const errorMessage = {
-        id: (Date.now() + 1).toString(),
-        type: 'bot',
-        content: '❌ Sorry, I encountered an error. Please try again.'
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSignup = async (e) => {
-    e.preventDefault();
-    setAuthError('');
-    setAuthLoading(true);
-
-    try {
-      const response = await fetch('/api/auth/signup', {
+      const res = await fetch('/api/demo-request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: authEmail,
-          password: authPassword,
-          sessionId
-        })
+        body: JSON.stringify(form),
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setShowVerificationMessage(true);
-        setShowAuthModal(false);
-        setAuthEmail('');
-        setAuthPassword('');
-        
-        const verifyMessage = {
-          id: Date.now().toString(),
-          type: 'bot',
-          content: "📧 Thanks for signing up! Please check your email and click the verification link to continue. Once verified, you can log in and enjoy unlimited access!"
-        };
-        setMessages(prev => [...prev, verifyMessage]);
+      const data = await res.json();
+      if (res.ok) {
+        setStatus('success');
+        setForm({ name: '', email: '', company: '', useCase: '', message: '' });
       } else {
-        setAuthError(data.error || 'Signup failed');
+        setStatus('error');
+        setErrorMsg(data.error || 'Something went wrong. Please try again.');
       }
-    } catch (error) {
-      setAuthError('Network error. Please try again.');
-    } finally {
-      setAuthLoading(false);
+    } catch (err) {
+      setStatus('error');
+      setErrorMsg('Something went wrong sending your request. Please try again or email us directly.');
     }
-  };
-
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setAuthError('');
-    setAuthLoading(true);
-
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: authEmail,
-          password: authPassword
-        })
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        if (!data.user.email_verified) {
-          setAuthError('Please verify your email before logging in');
-          return;
-        }
-
-        localStorage.setItem('pg_token', data.token);
-        localStorage.setItem('pg_user', JSON.stringify(data.user));
-        
-        setUser(data.user);
-        setIsBlocked(false);
-        setShowAuthModal(false);
-        setAuthEmail('');
-        setAuthPassword('');
-        
-        const welcomeMessage = {
-          id: Date.now().toString(),
-          type: 'bot',
-          content: `🎉 Welcome back! You now have unlimited access and can upload screenshots or PDF reports for analysis. How can I help you optimize your monetization today?`
-        };
-        setMessages(prev => [...prev, welcomeMessage]);
-      } else {
-        setAuthError(data.error || 'Login failed');
-      }
-    } catch (error) {
-      setAuthError('Network error. Please try again.');
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('pg_token');
-    localStorage.removeItem('pg_user');
-    setUser(null);
-    setShowChatHistory(false);
-    startNewChat();
-  };
-
-  const exampleQuestions = [
-    "My eCPM dropped 40% overnight",
-    "How to optimize AppLovin waterfall?",
-    "Best fill rate for rewarded ads?",
-    "Unity ads showing blank screen"
-  ];
-
-  const handleExampleClick = (question) => {
-    if (isBlocked && !user) {
-      setShowAuthModal(true);
-      return;
-    }
-    setInput(question);
   };
 
   return (
-    <div className="app">
-      {/* Header */}
-      <header className="header">
-        <div className="header-content">
-          <div className="logo">
-            <img src="/logo.png" alt="PurpleGiraffe" style={{width: '32px', height: '32px'}} />
-            <h1>Purple Giraffe</h1>
+    <div className="pg-home">
+      <header className="nav">
+        <div className="nav-inner">
+          <div className="nav-brand">
+            <img src="/logo.png" alt="" width="28" height="28" />
+            <span>Purple Giraffe</span>
           </div>
-          <div className="header-actions">
-            {user ? (
-              <>
-                <span className="user-email">{user.email}</span>
-                <button className="logout-btn" onClick={handleLogout}>
-                  Logout
-                </button>
-              </>
-            ) : (
-              <button className="login-btn" onClick={() => {
-                setAuthMode('login');
-                setShowAuthModal(true);
-              }}>
-                Login
-              </button>
-            )}
-            
-            {!isMobile && (
-              <button 
-                className="toggle-sidebar-btn desktop-only"
-                onClick={() => setShowSidebar(!showSidebar)}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="3" y1="12" x2="21" y2="12"/>
-                  <line x1="3" y1="6" x2="21" y2="6"/>
-                  <line x1="3" y1="18" x2="21" y2="18"/>
-                </svg>
-              </button>
-            )}
-            
-            {isMobile && (
-              <button 
-                className="mobile-pricing-btn"
-                onClick={() => setShowMobilePricing(true)}
-              >
-                💰
-              </button>
-            )}
-            
-            <button 
-              className="new-chat-btn" 
-              onClick={startNewChat}
-              disabled={isBlocked && !user}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              <span className="new-chat-text">New Chat</span>
-            </button>
-          </div>
+          <nav className="nav-links">
+            <a href="#prototypes" onClick={scrollToId('prototypes')}>Prototypes</a>
+            <a href="#request" className="nav-cta" onClick={scrollToId('request')}>Request a build</a>
+          </nav>
         </div>
       </header>
 
-      {/* Mobile chat history toggle */}
-      {user && isMobile && (
-        <button 
-          className="toggle-history-btn"
-          onClick={() => setShowChatHistory(!showChatHistory)}
-          style={{
-            position: 'fixed',
-            left: showChatHistory ? '270px' : '10px',
-            top: '70px',
-            zIndex: 101,
-            background: '#8B5CF6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '50%',
-            width: '40px',
-            height: '40px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-            cursor: 'pointer',
-            transition: 'left 0.3s'
-          }}
-        >
-          {showChatHistory ? '✕' : '📋'}
-        </button>
+      {returningUser && (
+        <div className="returning-banner">
+          <span>Signed in as {returningUser} on Purple Giraffe Copilot</span>
+          <Link href="/apps/copilot">Continue →</Link>
+        </div>
       )}
 
-      <div className={`main-container ${showChatHistory ? 'with-history' : ''}`}>
-        {/* Chat History Sidebar */}
-        {user && (
-          <div className={`chat-history ${showChatHistory ? 'show' : ''}`}>
-            <ChatHistory 
-              user={user}
-              sessionId={sessionId}
-              onSelectChat={loadPreviousChat}
-              onDeleteChat={handleChatDeleted}
-            />
-          </div>
-        )}
+      <section className="hero">
+        <p className="eyebrow">AI application studio</p>
+        <h1>Try the tool before you buy the tool.</h1>
+        <p className="hero-sub">
+          Purple Giraffe designs and builds custom AI applications for adtech teams,
+          clinics, advisors, and anyone else with a workflow worth automating. Every
+          build starts as a working prototype you can use first.
+        </p>
+        <div className="hero-actions">
+          <a href="#prototypes" className="btn btn-primary" onClick={scrollToId('prototypes')}>
+            Explore prototypes
+          </a>
+          <a href="#request" className="btn btn-ghost" onClick={scrollToId('request')}>
+            Request a build
+          </a>
+        </div>
+      </section>
 
-        {/* Main Chat Area */}
-        <main className="chat-container">
-          {loadingChat && (
-            <div style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              textAlign: 'center',
-              zIndex: 10
-            }}>
-              <div className="typing-indicator">
-                <span></span>
-                <span></span>
-                <span></span>
+      <section className="how">
+        <div className="how-step">
+          <span className="how-num">01</span>
+          <h3>Browse a prototype</h3>
+          <p>Find the closest match to what you need, or tell us there isn&apos;t one yet.</p>
+        </div>
+        <div className="how-step">
+          <span className="how-num">02</span>
+          <h3>Request a build</h3>
+          <p>Send us your use case. We&apos;ll scope what a version for your business looks like.</p>
+        </div>
+        <div className="how-step">
+          <span className="how-num">03</span>
+          <h3>We build it with you</h3>
+          <p>You get a working application shaped around your workflow, not a generic template.</p>
+        </div>
+      </section>
+
+      <section className="gallery" id="prototypes">
+        <h2>Prototypes</h2>
+        <div className="gallery-grid">
+          {PROTOTYPES.map((p) => (
+            <article className={`card card-${p.status}`} key={p.id}>
+              <div className="card-top">
+                <span className="card-index">{p.index}</span>
+                <span className={`stamp stamp-${p.status}`}>{p.statusLabel}</span>
               </div>
-              <p style={{marginTop: '10px', color: '#6B7280'}}>Loading chat...</p>
-            </div>
-          )}
-          
-          <div className="chat-content" style={{opacity: loadingChat ? 0.5 : 1}}>
-            {messages.length === 0 ? (
-              // Welcome Screen
-              <div className="welcome-screen">
-                <div className="welcome-logo">
-                  <img src="/logo.png" alt="PurpleGiraffe" style={{width: '80px', height: '80px'}} />
-                </div>
-                <h2 className="welcome-title">Welcome to Purple Giraffe</h2>
-                <p className="welcome-subtitle">Your AI expert for app monetization</p>
-                
-                {!user && (
-                  <div className="question-counter-display">
-                    <p>Free questions used: <strong>{questionCount} / {QUESTION_LIMIT}</strong></p>
-                    {questionCount >= QUESTION_LIMIT && (
-                      <p className="limit-warning">Please sign up to continue</p>
-                    )}
-                  </div>
-                )}
-                
-                {user && (
-                  <div className="question-counter-display" style={{background: '#F0FDF4', borderColor: '#10B981'}}>
-                    <p style={{color: '#10B981'}}>
-                      ✨ Beta : Upload Screenshots and PDF is in beta testing phase and might not give expected results
-                    </p>
-                  </div>
-                )}
-                
-                <div className="example-questions">
-                  {exampleQuestions.map((question, index) => (
-                    <button
-                      key={index}
-                      className="example-question"
-                      onClick={() => handleExampleClick(question)}
-                      disabled={isBlocked && !user}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M7 17L17 7M17 7H7M17 7V17"/>
-                      </svg>
-                      {question}
-                    </button>
+              <h3>{p.name}</h3>
+              <p>{p.description}</p>
+              {p.specs.length > 0 && (
+                <ul className="card-specs">
+                  {p.specs.map((s) => (
+                    <li key={s}>{s}</li>
                   ))}
-                </div>
-              </div>
-            ) : (
-              // Messages
-              <div className="messages">
-                {messages.map((message) => (
-                  <div key={message.id} className={`message-wrapper ${message.type}`}>
-                    <div className="message-container">
-                      {message.type === 'bot' && (
-                        <div className="avatar">
-                          <img src="/logo.png" alt="PurpleGiraffe" style={{width: '24px', height: '24px'}} />
-                        </div>
-                      )}
-                      <div className="message-content">
-                        {message.content}
-                        
-                        {/* Enhanced file preview for uploaded files */}
-                        {message.file && (
-                          <>
-                            {message.file.type.startsWith('image/') && message.file.url ? (
-                              <div className="image-preview">
-                                <img src={message.file.url} alt={message.file.name} />
-                              </div>
-                            ) : message.file.type === 'application/pdf' ? (
-                              <div className="file-preview pdf-preview">
-                                <div className="file-preview-icon">📄</div>
-                                <div className="file-preview-info">
-                                  <div className="file-preview-name">{message.file.name}</div>
-                                  <div className="file-preview-size">
-                                    PDF • {formatFileSize(message.file.size)}
-                                  </div>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="file-preview">
-                                <div className="file-preview-icon">📎</div>
-                                <div className="file-preview-info">
-                                  <div className="file-preview-name">{message.file.name}</div>
-                                  <div className="file-preview-size">{formatFileSize(message.file.size)}</div>
-                                </div>
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                
-                {uploading && (
-                  <div className="message-wrapper bot">
-                    <div className="message-container">
-                      <div className="avatar">
-                        <img src="/logo.png" alt="PurpleGiraffe" style={{width: '24px', height: '24px'}} />
-                      </div>
-                      <div className="message-content">
-                        <div className="processing-file">
-                          <svg className="spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M21 12a9 9 0 11-6.219-8.56"/>
-                          </svg>
-                          <span>Analyzing your file...</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {loading && !uploading && (
-                  <div className="message-wrapper bot">
-                    <div className="message-container">
-                      <div className="avatar">
-                        <img src="/logo.png" alt="PurpleGiraffe" style={{width: '24px', height: '24px'}} />
-                      </div>
-                      <div className="message-content">
-                        <div className="typing-indicator">
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            )}
-          </div>
-
-          {/* Input Area */}
-          <div className="input-wrapper">
-            {!user && (
-              <div className="question-limit-bar">
-                <div className="limit-progress">
-                  <div 
-                    className="limit-fill" 
-                    style={{width: `${(questionCount / QUESTION_LIMIT) * 100}%`}}
-                  />
-                </div>
-                <span className="limit-text">
-                  {questionCount} / {QUESTION_LIMIT} free questions used
-                </span>
-              </div>
-            )}
-            <form onSubmit={handleSubmit} className="input-form">
-              <div className="input-container">
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder={isBlocked && !user ? "Sign up to continue chatting..." : "Ask about monetization, ad networks, eCPM optimization..."}
-                  className="message-input"
-                  disabled={loading || (isBlocked && !user) || loadingChat}
-                />
-                
-                {/* File Upload Input (hidden) */}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*,.pdf"
-                  onChange={handleFileSelect}
-                  style={{ display: 'none' }}
-                />
-                
-                <div className="input-actions">
-                  {/* File Upload Button - Only for logged-in users */}
-                  {user && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <button
-                      type="button"
-                      className="file-upload-btn"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading || loading || loadingChat}
-                      title="Upload screenshot or PDF report (Beta)"
-                    >
-                      {uploading ? (
-                        <svg className="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M21 12a9 9 0 11-6.219-8.56"/>
-                        </svg>
-                      ) : (
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                          <polyline points="17 8 12 3 7 8"/>
-                          <line x1="12" y1="3" x2="12" y2="15"/>
-                        </svg>
-                      )}
-                    </button>
-                  </div>
-                )}
-                  
-                  {/* Send Button */}
-                  <button 
-                    type="submit" 
-                    className="send-button" 
-                    disabled={loading || !input.trim() || (isBlocked && !user) || loadingChat}
-                  >
-                    {loading && !uploading ? (
-                      <svg className="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M21 12a9 9 0 11-6.219-8.56"/>
-                      </svg>
-                    ) : (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <line x1="22" y1="2" x2="11" y2="13"/>
-                        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                      </svg>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </form>
-            <p className="input-footer">
-              Purple Giraffe AI can make mistakes. Verify important information.
-            </p>
-          </div>
-        </main>
-
-        {/* Pricing Sidebar - Desktop Only */}
-        {showSidebar && !isMobile && (
-          <aside className="pricing-sidebar">
-            <PricingTiers 
-              user={user} 
-              currentTier={user?.tier || 'free'}
-              onSignupClick={() => {
-                setAuthMode('signup');
-                setShowAuthModal(true);
-              }}
-              onLoginClick={() => {
-                setAuthMode('login');
-                setShowAuthModal(true);
-              }}
-            />
-          </aside>
-        )}
-      </div>
-      
-      {/* Mobile Pricing Modal */}
-      {showMobilePricing && isMobile && (
-        <div className="mobile-pricing-overlay" onClick={() => setShowMobilePricing(false)}>
-          <div className="mobile-pricing-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="mobile-pricing-header">
-              <h3>Choose Your Plan</h3>
-              <button 
-                className="mobile-pricing-close"
-                onClick={() => setShowMobilePricing(false)}
-              >
-                ✕
-              </button>
-            </div>
-            <div className="mobile-pricing-content">
-              <PricingTiers 
-                user={user} 
-                currentTier={user?.tier || 'free'}
-                onSignupClick={() => {
-                  setShowMobilePricing(false);
-                  setAuthMode('signup');
-                  setShowAuthModal(true);
-                }}
-                onLoginClick={() => {
-                  setShowMobilePricing(false);
-                  setAuthMode('login');
-                  setShowAuthModal(true);
-                }}
-              />
-            </div>
-          </div>
+                </ul>
+              )}
+              {p.href && p.href.startsWith('/') ? (
+                <Link href={p.href} className="card-cta">
+                  {p.cta} →
+                </Link>
+              ) : p.href ? (
+                <a href={p.href} className="card-cta" onClick={scrollToId('request')}>
+                  {p.cta} →
+                </a>
+              ) : null}
+            </article>
+          ))}
         </div>
-      )}
-      
-      {/* Auth Modal */}
-      {showAuthModal && (
-        <div className="modal-overlay" onClick={(e) => {
-          if (e.target === e.currentTarget && !isBlocked) {
-            setShowAuthModal(false);
+      </section>
+
+      <section className="request" id="request">
+        <div className="request-inner">
+          <h2>Tell us what you need</h2>
+          <p>A few details and we&apos;ll follow up with what a prototype for your business could look like.</p>
+
+          {status === 'success' ? (
+            <div className="form-success">
+              Thanks — we&apos;ve got your request and will follow up by email.
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="request-form">
+              <div className="form-row">
+                <label>
+                  Name
+                  <input type="text" value={form.name} onChange={handleChange('name')} required />
+                </label>
+                <label>
+                  Email
+                  <input type="email" value={form.email} onChange={handleChange('email')} required />
+                </label>
+              </div>
+              <div className="form-row">
+                <label>
+                  Company (optional)
+                  <input type="text" value={form.company} onChange={handleChange('company')} />
+                </label>
+                <label>
+                  Closest prototype
+                  <select value={form.useCase} onChange={handleChange('useCase')}>
+                    <option value="">Select one</option>
+                    {USE_CASE_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <label>
+                Tell us more
+                <textarea
+                  rows="4"
+                  value={form.message}
+                  onChange={handleChange('message')}
+                  placeholder="What should this application do, and who is it for?"
+                />
+              </label>
+              {status === 'error' && <div className="form-error">{errorMsg}</div>}
+              <button type="submit" className="btn btn-primary" disabled={status === 'submitting'}>
+                {status === 'submitting' ? 'Sending…' : 'Send request'}
+              </button>
+            </form>
+          )}
+        </div>
+      </section>
+
+      <footer className="footer">
+        <span>Purple Giraffe</span>
+        <span>hello@purplegiraffe.ai</span>
+      </footer>
+
+      <style jsx>{`
+        .pg-home {
+          --pg-ink: #1a1523;
+          --pg-paper: #faf9fc;
+          --pg-card: #ffffff;
+          --pg-purple: #8b5cf6;
+          --pg-purple-deep: #4c2e9e;
+          --pg-amber: #f2a93b;
+          --pg-amber-deep: #8a5a10;
+          --pg-line: #e4dff0;
+          --pg-muted: #6b6478;
+          --font-display: 'Space Grotesk', -apple-system, sans-serif;
+          --font-mono: 'IBM Plex Mono', 'SFMono-Regular', monospace;
+          color: var(--pg-ink);
+          background: var(--pg-paper);
+        }
+
+        .pg-home a:focus-visible,
+        .pg-home button:focus-visible,
+        .pg-home input:focus-visible,
+        .pg-home select:focus-visible,
+        .pg-home textarea:focus-visible {
+          outline: 2px solid var(--pg-purple);
+          outline-offset: 2px;
+        }
+
+        .nav {
+          position: sticky;
+          top: 0;
+          z-index: 20;
+          background: rgba(250, 249, 252, 0.88);
+          backdrop-filter: blur(8px);
+          border-bottom: 1px solid var(--pg-line);
+        }
+        .nav-inner {
+          max-width: 1120px;
+          margin: 0 auto;
+          padding: 1rem 1.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .nav-brand {
+          display: flex;
+          align-items: center;
+          gap: 0.6rem;
+          font-family: var(--font-display);
+          font-weight: 600;
+          font-size: 1.1rem;
+        }
+        .nav-links {
+          display: flex;
+          align-items: center;
+          gap: 1.5rem;
+        }
+        .nav-links a {
+          text-decoration: none;
+          color: var(--pg-ink);
+          font-size: 0.9rem;
+        }
+        .nav-links a.nav-cta {
+          background: var(--pg-ink);
+          color: var(--pg-paper);
+          padding: 0.5rem 1rem;
+          border-radius: 999px;
+        }
+
+        .returning-banner {
+          background: var(--pg-purple);
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 1rem;
+          padding: 0.6rem 1.5rem;
+          font-size: 0.9rem;
+          text-align: center;
+          flex-wrap: wrap;
+        }
+        .returning-banner a {
+          color: white;
+          font-weight: 600;
+          text-decoration: underline;
+        }
+
+        .hero {
+          max-width: 780px;
+          margin: 0 auto;
+          padding: 5rem 1.5rem 4rem;
+          text-align: center;
+        }
+        .eyebrow {
+          font-family: var(--font-mono);
+          text-transform: uppercase;
+          letter-spacing: 0.12em;
+          font-size: 0.75rem;
+          color: var(--pg-purple-deep);
+          margin-bottom: 1rem;
+        }
+        .hero h1 {
+          font-family: var(--font-display);
+          font-size: clamp(2.25rem, 5vw, 3.5rem);
+          font-weight: 600;
+          line-height: 1.15;
+          margin-bottom: 1.25rem;
+        }
+        .hero-sub {
+          font-size: 1.125rem;
+          line-height: 1.7;
+          color: var(--pg-muted);
+          margin-bottom: 2.25rem;
+        }
+        .hero-actions {
+          display: flex;
+          gap: 1rem;
+          justify-content: center;
+          flex-wrap: wrap;
+        }
+
+        .btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.4rem;
+          padding: 0.8rem 1.5rem;
+          border-radius: 10px;
+          font-size: 0.95rem;
+          font-weight: 500;
+          text-decoration: none;
+          border: 1px solid transparent;
+          cursor: pointer;
+          transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+        }
+        .btn-primary {
+          background: var(--pg-ink);
+          color: var(--pg-paper);
+        }
+        .btn-primary:hover {
+          transform: translateY(-1px);
+          background: var(--pg-purple-deep);
+        }
+        .btn-ghost {
+          background: transparent;
+          border-color: var(--pg-line);
+          color: var(--pg-ink);
+        }
+        .btn-ghost:hover {
+          border-color: var(--pg-purple);
+          color: var(--pg-purple-deep);
+        }
+        .btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          transform: none;
+        }
+
+        .how {
+          max-width: 1120px;
+          margin: 0 auto;
+          padding: 3.5rem 1.5rem 5rem;
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 2rem;
+          border-top: 1px solid var(--pg-line);
+        }
+        .how-step {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+        .how-num {
+          font-family: var(--font-mono);
+          color: var(--pg-purple);
+          font-size: 0.85rem;
+          letter-spacing: 0.05em;
+        }
+        .how-step h3 {
+          font-family: var(--font-display);
+          font-size: 1.15rem;
+          font-weight: 600;
+        }
+        .how-step p {
+          color: var(--pg-muted);
+          line-height: 1.6;
+          font-size: 0.95rem;
+        }
+
+        .gallery {
+          max-width: 1120px;
+          margin: 0 auto;
+          padding: 1rem 1.5rem 5rem;
+        }
+        .gallery h2 {
+          font-family: var(--font-display);
+          font-size: 1.75rem;
+          font-weight: 600;
+          margin-bottom: 2rem;
+        }
+        .gallery-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 1.5rem;
+        }
+        .card {
+          background: var(--pg-card);
+          border: 1px solid var(--pg-line);
+          border-radius: 14px;
+          padding: 1.75rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.9rem;
+        }
+        .card.card-live {
+          border-color: var(--pg-purple);
+          box-shadow: 0 8px 24px -14px rgba(139, 92, 246, 0.45);
+        }
+        .card-top {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .card-index {
+          font-family: var(--font-mono);
+          font-size: 0.8rem;
+          color: var(--pg-muted);
+        }
+        .stamp {
+          font-family: var(--font-mono);
+          font-size: 0.7rem;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          padding: 0.25rem 0.6rem;
+          border-radius: 999px;
+          transform: rotate(-4deg);
+          border: 1px dashed currentColor;
+        }
+        .stamp.stamp-live {
+          color: var(--pg-amber-deep);
+          background: rgba(242, 169, 59, 0.18);
+          border-style: solid;
+        }
+        .stamp.stamp-planned {
+          color: var(--pg-purple-deep);
+          background: rgba(139, 92, 246, 0.08);
+        }
+        .stamp.stamp-open {
+          color: var(--pg-muted);
+          background: rgba(107, 100, 120, 0.08);
+        }
+        .card h3 {
+          font-family: var(--font-display);
+          font-size: 1.25rem;
+          font-weight: 600;
+        }
+        .card p {
+          color: var(--pg-muted);
+          line-height: 1.6;
+          font-size: 0.95rem;
+        }
+        .card-specs {
+          list-style: none;
+          display: flex;
+          flex-direction: column;
+          gap: 0.35rem;
+          font-family: var(--font-mono);
+          font-size: 0.8rem;
+          color: var(--pg-purple-deep);
+        }
+        .card-specs li::before {
+          content: '· ';
+          color: var(--pg-purple);
+        }
+        .card :global(.card-cta) {
+          margin-top: auto;
+          align-self: flex-start;
+          text-decoration: none;
+          font-weight: 600;
+          color: var(--pg-ink);
+          border-bottom: 2px solid var(--pg-purple);
+          padding-bottom: 0.15rem;
+        }
+        .card :global(.card-cta:hover) {
+          color: var(--pg-purple-deep);
+        }
+
+        .request {
+          background: var(--pg-ink);
+          color: var(--pg-paper);
+          padding: 5rem 1.5rem;
+        }
+        .request-inner {
+          max-width: 640px;
+          margin: 0 auto;
+        }
+        .request-inner h2 {
+          font-family: var(--font-display);
+          font-size: 1.85rem;
+          font-weight: 600;
+          margin-bottom: 0.5rem;
+        }
+        .request-inner > p {
+          color: rgba(250, 249, 252, 0.7);
+          margin-bottom: 2rem;
+        }
+        .request-form {
+          display: flex;
+          flex-direction: column;
+          gap: 1.1rem;
+        }
+        .form-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1.1rem;
+        }
+        .request-form label {
+          display: flex;
+          flex-direction: column;
+          gap: 0.4rem;
+          font-size: 0.85rem;
+          color: rgba(250, 249, 252, 0.75);
+        }
+        .request-form input,
+        .request-form select,
+        .request-form textarea {
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.18);
+          border-radius: 8px;
+          padding: 0.7rem 0.85rem;
+          color: var(--pg-paper);
+          font-size: 0.95rem;
+          font-family: inherit;
+        }
+        .request-form textarea {
+          resize: vertical;
+          min-height: 100px;
+        }
+        .request-form select option {
+          color: var(--pg-ink);
+        }
+        .request .btn-primary {
+          background: var(--pg-purple);
+          align-self: flex-start;
+        }
+        .request .btn-primary:hover {
+          background: var(--pg-amber);
+          color: var(--pg-ink);
+        }
+        .form-error {
+          color: #ffb4b4;
+          font-size: 0.85rem;
+        }
+        .form-success {
+          background: rgba(139, 92, 246, 0.15);
+          border: 1px solid var(--pg-purple);
+          border-radius: 10px;
+          padding: 1.25rem;
+          font-size: 1rem;
+        }
+
+        .footer {
+          max-width: 1120px;
+          margin: 0 auto;
+          padding: 2rem 1.5rem;
+          display: flex;
+          justify-content: space-between;
+          font-size: 0.85rem;
+          color: var(--pg-muted);
+          font-family: var(--font-mono);
+        }
+
+        @media (max-width: 768px) {
+          .how {
+            grid-template-columns: 1fr;
           }
-        }}>
-          <div className="auth-modal">
-            {!isBlocked && (
-              <button className="modal-close" onClick={() => setShowAuthModal(false)}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"/>
-                  <line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
-            )}
-            
-            <div className="auth-header">
-              <img src="/logo.png" alt="PurpleGiraffe" style={{width: '48px', height: '48px'}} />
-              <h2>{authMode === 'signup' ? 'Create Your Account' : 'Welcome Back'}</h2>
-              {isBlocked && (
-                <p className="auth-subtitle">
-                  You've used all {QUESTION_LIMIT} free questions. Sign up to continue with unlimited access!
-                </p>
-              )}
-            </div>
-
-            <form onSubmit={authMode === 'signup' ? handleSignup : handleLogin} className="auth-form">
-              <div className="form-group">
-                <label>Email</label>
-                <input
-                  type="email"
-                  value={authEmail}
-                  onChange={(e) => setAuthEmail(e.target.value)}
-                  placeholder="your@email.com"
-                  required
-                  className="auth-input"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Password</label>
-                <input
-                  type="password"
-                  value={authPassword}
-                  onChange={(e) => setAuthPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  minLength="6"
-                  className="auth-input"
-                />
-              </div>
-
-              {authError && (
-                <div className="auth-error">
-                  {authError}
-                </div>
-              )}
-
-              <button type="submit" className="auth-submit" disabled={authLoading}>
-                {authLoading ? 'Processing...' : (authMode === 'signup' ? 'Sign Up' : 'Log In')}
-              </button>
-            </form>
-
-            <div className="auth-footer">
-              {authMode === 'signup' ? (
-                <p>
-                  Already have an account?{' '}
-                  <button onClick={() => setAuthMode('login')} className="auth-switch">
-                    Log in
-                  </button>
-                </p>
-              ) : (
-                <p>
-                  Don't have an account?{' '}
-                  <button onClick={() => setAuthMode('signup')} className="auth-switch">
-                    Sign up
-                  </button>
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Verification Message */}
-      {showVerificationMessage && (
-        <div className="verification-banner">
-          <p>📧 Check your email for verification link!</p>
-          <button onClick={() => setShowVerificationMessage(false)}>×</button>
-        </div>
-      )}
+          .gallery-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+        @media (max-width: 640px) {
+          .form-row {
+            grid-template-columns: 1fr;
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .pg-home * {
+            transition: none !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
