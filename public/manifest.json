@@ -1,8 +1,8 @@
 {
-  "name": "Purple Giraffe",
-  "short_name": "PurpleGiraffe",
-  "description": "AI Monetization Assistant",
-  "start_url": "/",
+  "name": "Purple Giraffe Copilot",
+  "short_name": "PG Copilot",
+  "description": "AI assistant for AdTech FAQs and debugging",
+  "start_url": "/apps/copilot",
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#8b5cf6",
