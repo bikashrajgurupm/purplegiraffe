@@ -31,12 +31,11 @@ export default function PricingTiers({
       </div>
 
       <div className="build-callout">
-        <h4>Want a private tool for your workflow?</h4>
+        <h4>Need a private tool for your workflow?</h4>
         <p>
-          Tell us your process and we&apos;ll suggest whether it needs a simple app, a
-          dashboard, an automation, or an AI-assisted tool.
+          Tell us what you are trying to manage, track or simplify.
         </p>
-        <Link href="/#request" className="build-callout-cta">Request a build &rarr;</Link>
+        <Link href="/#request" className="build-callout-cta">Request a private build &rarr;</Link>
       </div>
 
       <p className="pricing-footnote">
