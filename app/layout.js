@@ -2,8 +2,8 @@
 import './globals.css'
 
 export const metadata = {
-  title: 'Purple Giraffe — AI applications for your business',
-  description: 'Purple Giraffe designs and builds custom AI applications for small businesses, enterprises, and individuals. Try a working prototype, then request a build for your own use case.',
+  title: 'Purple Giraffe — Custom apps for your business',
+  description: 'Purple Giraffe builds custom apps and workflow tools for businesses and individuals: order trackers, booking tools, dashboards, customer portals, inventory systems and more.',
   metadataBase: new URL('https://purplegiraffe.ai'),
   icons: {
     icon: '/logo.png',
@@ -11,8 +11,8 @@ export const metadata = {
     apple: '/logo.png',
   },
   openGraph: {
-    title: 'Purple Giraffe — AI applications for your business',
-    description: 'Browse working AI prototypes across industries, then request a custom build for your own business.',
+    title: 'Purple Giraffe — Custom apps for your business',
+    description: 'Tell us your workflow. We build the app. Explore examples, then request a custom build for your own use case.',
     url: 'https://purplegiraffe.ai',
     siteName: 'Purple Giraffe',
     type: 'website',
