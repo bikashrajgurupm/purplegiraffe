@@ -3,226 +3,116 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-const HERO_CYCLE_WORDS = ['bakeries', 'salons', 'shops', 'consultants', 'founders', 'your workflow'];
+const HERO_WORDS = ['clinic desk', 'delivery tracker', 'booking board', 'customer portal', 'order dashboard', 'personal tool'];
 
 const NAV_LINKS = [
-  { label: 'Examples', href: '#examples' },
-  { label: 'What we build', href: '#what-we-build' },
-  { label: 'How it works', href: '#how-it-works' },
-  { label: 'Pricing', href: '#pricing' },
+  { label: 'Live Prototype', href: '#live-prototype' },
+  { label: 'App Ideas', href: '#app-ideas' },
+  { label: 'How It Works', href: '#how-it-works' },
+  { label: 'Start from \u20b9999', href: '#pricing' },
   { label: 'FAQ', href: '#faq' },
 ];
 
-const PROBLEM_CARDS = [
+const APP_IDEAS = [
   {
-    title: 'Orders get missed',
-    text: 'Customer requests come through WhatsApp, calls, Instagram and spreadsheets, but there is no single place to track them.',
-  },
-  {
-    title: 'Follow-ups depend on memory',
-    text: 'Payments, delivery dates, appointments and reminders are easy to forget when everything is manual.',
-  },
-  {
-    title: 'Spreadsheets become messy',
-    text: 'Excel is flexible, but it becomes hard to manage once multiple people, statuses and workflows are involved.',
-  },
-  {
-    title: 'Generic software does not fit',
-    text: 'Off-the-shelf tools often do too much or too little. Sometimes you need a simple app built around your exact process.',
-  },
-];
-
-const WHAT_WE_BUILD = [
-  {
-    title: 'Order Management Apps',
-    text: 'Track custom orders, due dates, payments, delivery status, customer details and staff tasks in one place.',
-    examples: 'Bakery orders, boutique orders, custom gifts, catering orders.',
-  },
-  {
-    title: 'Booking & Appointment Tools',
-    text: 'Let customers request slots, track bookings, manage availability and reduce back-and-forth.',
-    examples: 'Salons, tutors, clinics, consultants, trainers.',
-  },
-  {
-    title: 'Inventory & Stock Trackers',
-    text: 'Track stock levels, purchase needs, low-stock alerts, suppliers and usage.',
-    examples: 'Cafes, bakeries, stores, small warehouses.',
-  },
-  {
-    title: 'Lead & Customer Trackers',
-    text: 'Capture enquiries, qualify leads, track conversations, and follow up at the right time.',
-    examples: 'Real estate agents, agencies, consultants, service businesses.',
-  },
-  {
-    title: 'Internal Dashboards',
-    text: 'Simple dashboards for tasks, reports, approvals, operations and team visibility.',
-    examples: 'Small teams, founders, operations teams.',
-  },
-  {
-    title: 'Personal Use-Case Apps',
-    text: 'Custom tools for personal workflows, planning, tracking, learning, budgeting or family organisation.',
-    examples: 'Habit trackers, study planners, personal finance trackers, home inventory.',
-  },
-  {
-    title: 'Customer Portals',
-    text: 'Give your customers a simple page or portal to place orders, check status, upload details or view updates.',
-    examples: null,
-  },
-  {
-    title: 'AI Features When Useful',
-    text: 'Some apps may benefit from AI features like summarising messages, drafting replies, analysing documents or answering FAQs. We add AI only when it helps the workflow.',
-    examples: null,
-  },
-];
-
-const EXAMPLES = [
-  {
-    id: 'bakery',
-    title: 'Bakery Order Manager',
-    category: 'Small Business',
-    categoryColor: 'purple',
-    description: 'A custom app for bakeries to manage cake orders, delivery dates, payments, customer notes, flavours, sizes, add-ons and staff tasks.',
-    features: ['Custom order form', 'Order status dashboard', 'Advance/payment tracker', 'Delivery calendar', 'Customer reminders'],
+    id: 'dental',
+    title: 'Dental Clinic Desk',
+    eyebrow: 'For clinics and appointment-heavy businesses',
+    copy: 'Manage appointments, patient follow-ups, payments, treatment status, reminders and front-desk tasks in one place.',
+    tiny: 'No medical advice. Just cleaner clinic operations.',
     cta: 'Build something like this',
-    href: '#request',
+    featured: true,
   },
   {
-    id: 'booking',
-    title: 'Appointment & Booking Manager',
-    category: 'Service Business',
-    categoryColor: 'amber',
-    description: 'A simple app for managing bookings, customer details, appointment slots, reminders and status.',
-    features: ['Booking requests', 'Calendar view', 'Customer history', 'Reminder workflow'],
+    id: 'delivery',
+    title: 'Delivery Command Board',
+    eyebrow: 'For delivery and local operations',
+    copy: 'Track orders, pickups, drops, riders, payment collection, failed deliveries, COD status and daily dispatches.',
+    tiny: "For when 'Where is this order?' becomes your full-time job.",
     cta: 'Build something like this',
-    href: '#request',
-  },
-  {
-    id: 'inventory',
-    title: 'Inventory & Reorder Tracker',
-    category: 'Operations',
-    categoryColor: 'purple',
-    description: 'Track stock levels, supplier details, daily usage, low-stock alerts and reorder history.',
-    features: ['Product list', 'Stock in/out', 'Low stock alerts', 'Supplier notes'],
-    cta: 'Build something like this',
-    href: '#request',
   },
   {
     id: 'leads',
-    title: 'Lead & Follow-up Tracker',
-    category: 'Sales',
-    categoryColor: 'amber',
-    description: 'Capture incoming leads, track conversation status, set follow-up reminders and generate simple summaries.',
-    features: ['Lead capture form', 'Status pipeline', 'Follow-up reminders', 'Notes and tasks'],
+    title: 'Lead Nest',
+    eyebrow: 'For sales and enquiries',
+    copy: 'Capture enquiries, track status, add notes, set reminders and see who needs a follow-up today.',
+    tiny: "Because 'I'll remember' isn't a CRM.",
     cta: 'Build something like this',
-    href: '#request',
   },
   {
-    id: 'copilot',
-    title: 'Purple Giraffe Copilot',
-    category: 'AI Feature Example',
-    categoryColor: 'muted',
-    description: 'An example of an AI-assisted tool for specialised troubleshooting and question-answering. Useful when a workflow needs expert-style guidance or document/chat support.',
-    features: [],
-    cta: 'Try prototype',
-    href: '/apps/copilot',
+    id: 'inventory',
+    title: 'Stock Goblin',
+    eyebrow: 'For inventory and reorders',
+    copy: 'Track stock, suppliers, daily usage, low-stock alerts and reorder history without living inside Excel.',
+    tiny: 'A tiny app that nags before things run out.',
+    cta: 'Build something like this',
   },
   {
-    id: 'yours',
-    title: 'Your Own Workflow',
-    category: 'Custom',
-    categoryColor: 'amber',
-    description: 'Have a process that does not fit any existing tool? Tell us how you work today, and we will suggest the simplest app version.',
-    features: [],
-    cta: 'Tell us your idea',
-    href: '#request',
+    id: 'booking',
+    title: 'Booking Board',
+    eyebrow: 'For services and appointments',
+    copy: 'Manage booking requests, slots, customer details, reminders, cancellations and follow-ups.',
+    tiny: 'For salons, tutors, trainers, consultants, clinics and classes.',
+    cta: 'Build something like this',
+  },
+  {
+    id: 'custom-orders',
+    title: 'Custom Order Studio',
+    eyebrow: 'For made-to-order businesses',
+    copy: 'Track custom orders, due dates, advances, delivery notes, customer preferences, add-ons and staff tasks.',
+    tiny: 'Useful for bakeries, boutiques, catering, gifts and custom work.',
+    cta: 'Build something like this',
+  },
+  {
+    id: 'personal',
+    title: 'Personal Command Center',
+    eyebrow: 'For personal workflows',
+    copy: 'A private tool for habits, study plans, family tasks, budgeting, collections, routines or anything you keep rebuilding in spreadsheets.',
+    tiny: 'Your weird system, but cleaner.',
+    cta: 'Build my personal tool',
   },
 ];
 
 const HOW_IT_WORKS = [
-  { title: 'Tell us your workflow', text: 'Explain what you currently do manually: orders, bookings, customers, inventory, follow-ups, reports or personal tracking.' },
-  { title: 'We design the first version', text: 'We convert your workflow into a simple app structure: screens, users, data, statuses and actions.' },
-  { title: 'We build and share', text: 'You get a working version to test. We improve it based on feedback.' },
-  { title: 'You choose ownership or management', text: 'We can hand over the source code or continue hosting and managing the app for you.' },
-  { title: 'Improve over time', text: 'Once the first version works, we can add features, dashboards, automations, integrations or AI features if useful.' },
+  { title: 'Show us the mess', text: 'Send the spreadsheet, WhatsApp flow, screenshots, notes, or just explain how you do it today.' },
+  { title: 'We shape the app', text: 'We turn the workflow into screens, fields, statuses, users and actions.' },
+  { title: 'You use it', text: 'We ship a working version. You can own the source code or ask Purple Giraffe to manage it.' },
 ];
 
-const PRICING_CARDS = [
-  {
-    title: 'Mini App',
-    price: 'From \u20b925,000',
-    bestFor: 'One small workflow or personal tool.',
-    includes: ['Simple app flow', 'Basic screens', 'Data storage', 'Demo deployment', 'Handover walkthrough'],
-    timeline: '5\u201310 days',
-    cta: 'Request mini app',
-  },
-  {
-    title: 'Business Workflow App',
-    price: 'From \u20b975,000',
-    bestFor: 'Small businesses that need order tracking, bookings, dashboards, inventory or customer workflows.',
-    includes: ['Custom screens', 'Database', 'Admin view', 'Basic reporting', 'Deployment', 'Source-code handover option'],
-    timeline: '2\u20134 weeks',
-    cta: 'Discuss business app',
-  },
-  {
-    title: 'Full Custom Build',
-    price: 'From \u20b91.5L',
-    bestFor: 'Larger workflows with multiple users, roles, integrations, customer portals or advanced features.',
-    includes: ['Full app build', 'User roles if needed', 'Custom dashboard', 'Integrations if needed', 'Documentation', 'Source-code handover'],
-    timeline: '4\u20138 weeks',
-    cta: 'Plan custom build',
-  },
-  {
-    title: 'Managed App',
-    price: 'From \u20b910,000/month',
-    bestFor: 'Customers who want us to host, maintain and improve the app.',
-    includes: ['Hosting support', 'Bug fixes', 'Monitoring', 'Backups', 'Small improvements', 'Support'],
-    timeline: null,
-    cta: 'Discuss managed app',
-  },
+const PRICING_BLOCKS = [
+  { title: 'Mini Build', copy: 'One small workflow. One clear outcome. A working first version.', price: 'Starts at \u20b9999' },
+  { title: 'Business Build', copy: 'For apps with dashboards, users, data, roles, portals or integrations.', price: 'Scoped after workflow review' },
+  { title: 'Managed App', copy: 'We can host, monitor, fix and improve the app after launch.', price: 'Monthly plan after launch' },
 ];
 
-const WHO_FOR = [
-  'Bakeries and custom-order businesses',
-  'Salons, tutors, trainers and appointment-based services',
-  'Small stores and inventory-heavy businesses',
-  'Consultants, agencies and freelancers',
-  'Founders and small teams',
-  'Individuals with personal tracking or planning needs',
-  'Anyone outgrowing WhatsApp, Excel and manual follow-ups',
+const AI_EXAMPLES = [
+  'Auto-summarise customer messages',
+  'Draft replies',
+  'Ask questions from documents',
+  'Analyse uploaded files',
+  'Create a private copilot',
+  'Extract action items',
 ];
 
 const FAQS = [
-  { q: 'Is Purple Giraffe an AI company?', a: 'Purple Giraffe builds custom apps and workflow tools. Some apps may include AI features when useful, but AI is not required for every project.' },
-  { q: 'What kind of apps do you build?', a: 'Order trackers, booking tools, dashboards, inventory systems, lead trackers, customer portals, personal tools, internal apps and custom workflow software.' },
-  { q: 'Can I own the source code?', a: 'Yes. For custom builds, we can hand over the source code and basic deployment documentation.' },
-  { q: 'Can you manage the app for me?', a: 'Yes. If you do not want to handle hosting, maintenance or changes, we can manage the app for a monthly fee.' },
-  { q: 'How long does it take?', a: 'Small apps can take 5\u201310 days. Business workflow apps usually take 2\u20134 weeks. Larger custom builds may take 4\u20138 weeks or more.' },
-  { q: 'Do I need to know technology?', a: 'No. You only need to explain your current workflow and what you want to improve.' },
-  { q: 'Can you build mobile apps?', a: 'We usually recommend starting with a web app that works well on mobile browsers. Native mobile apps can be considered if the use case truly needs it.' },
-  { q: 'Can you connect with WhatsApp, Google Sheets or other tools?', a: 'Yes, depending on the tool and available APIs. Integrations are scoped before the build.' },
-  { q: 'Will the first version have every feature?', a: 'No. We recommend starting with the smallest useful version, testing it, and improving it over time.' },
+  { q: 'Is Purple Giraffe an AI company?', a: 'No. Purple Giraffe builds custom apps and workflow tools. Some apps include AI features when useful, but most projects start with a simple workflow problem.' },
+  { q: 'What can you build?', a: 'Order trackers, clinic desks, booking boards, delivery trackers, inventory tools, lead trackers, customer portals, dashboards, personal tools and other custom apps.' },
+  { q: 'Do I need a technical requirement document?', a: "No. Explain how you work today. We'll help shape the first version." },
+  { q: 'Can I own the source code?', a: 'Yes. We can hand over the source code and basic documentation.' },
+  { q: 'Can you manage the app for me?', a: 'Yes. We can host, maintain, fix and improve the app for a monthly fee.' },
+  { q: 'Can you add AI?', a: 'Yes, if it helps the workflow. We do not add AI just for the sake of it.' },
 ];
 
-const BUDGET_OPTIONS = ['Under \u20b925k', '\u20b925k\u2013\u20b975k', '\u20b975k\u2013\u20b91.5L', '\u20b91.5L+', 'Not sure'];
-const TIMELINE_OPTIONS = ['As soon as possible', '2\u20134 weeks', '1\u20132 months', 'Just exploring'];
+const BUDGET_OPTIONS = ['Under \u20b910k', '\u20b910k\u2013\u20b925k', '\u20b925k\u2013\u20b975k', '\u20b975k+', 'Not sure'];
+const TIMELINE_OPTIONS = ['Urgent', '2\u20134 weeks', '1\u20132 months', 'Just exploring'];
 const USE_TYPE_OPTIONS = ['Business', 'Personal'];
-const OWNERSHIP_OPTIONS = ['Source-code handover', 'Managed service', 'Not sure yet'];
 
 export default function Home() {
   const [returningUser, setReturningUser] = useState(null);
   const [heroWordIndex, setHeroWordIndex] = useState(0);
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
   const [form, setForm] = useState({
-    name: '',
-    contact: '',
-    useType: '',
-    buildDescription: '',
-    currentProcess: '',
-    whoWillUse: '',
-    whatToTrack: '',
-    ownership: '',
-    budget: '',
-    timeline: '',
+    name: '', contact: '', buildDescription: '', currentProcess: '', useType: '', budget: '', timeline: '',
   });
   const [status, setStatus] = useState('idle'); // idle | submitting | success | error
   const [errorMsg, setErrorMsg] = useState('');
@@ -243,8 +133,8 @@ export default function Home() {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) return;
     const interval = setInterval(() => {
-      setHeroWordIndex((i) => (i + 1) % HERO_CYCLE_WORDS.length);
-    }, 2000);
+      setHeroWordIndex((i) => (i + 1) % HERO_WORDS.length);
+    }, 1900);
     return () => clearInterval(interval);
   }, []);
 
@@ -269,10 +159,7 @@ export default function Home() {
       const data = await res.json();
       if (res.ok) {
         setStatus('success');
-        setForm({
-          name: '', contact: '', useType: '', buildDescription: '', currentProcess: '',
-          whoWillUse: '', whatToTrack: '', ownership: '', budget: '', timeline: '',
-        });
+        setForm({ name: '', contact: '', buildDescription: '', currentProcess: '', useType: '', budget: '', timeline: '' });
       } else {
         setStatus('error');
         setErrorMsg(data.error || 'Something went wrong. Please try again.');
@@ -297,7 +184,7 @@ export default function Home() {
                 {link.label}
               </a>
             ))}
-            <a href="#request" className="nav-cta" onClick={scrollToId('request')}>Request a build</a>
+            <a href="#request" className="nav-cta" onClick={scrollToId('request')}>Tell us your workflow</a>
           </nav>
         </div>
       </header>
@@ -310,104 +197,97 @@ export default function Home() {
       )}
 
       <section className="hero">
-        <p className="hero-kicker">
-          Built for{' '}
-          <span className="cycle-word" key={HERO_CYCLE_WORDS[heroWordIndex]}>
-            {HERO_CYCLE_WORDS[heroWordIndex]}
-          </span>
-        </p>
-        <h1>Custom apps for your business, built around the way you work.</h1>
+        <span className="hero-badge">Custom apps from &#8377;999</span>
+        <h1>
+          Build your{' '}
+          <span className="cycle-word" key={HERO_WORDS[heroWordIndex]}>{HERO_WORDS[heroWordIndex]}</span>.
+        </h1>
+        <p className="hero-static-line">Built around the way you actually work.</p>
         <p className="hero-sub">
-          Purple Giraffe helps businesses and individuals turn repeated manual work into
-          simple working apps: order trackers, booking tools, dashboards, customer
-          portals, inventory systems, personal tools and more.
+          Purple Giraffe turns messy workflows into simple custom apps &mdash; for
+          businesses, founders, creators, clinics, shops, service teams and personal
+          use cases. Add AI where it helps. Skip it where it doesn&apos;t.
         </p>
         <div className="hero-actions">
           <a href="#request" className="btn btn-primary" onClick={scrollToId('request')}>
-            Request a build
+            Tell us your workflow
           </a>
-          <a href="#examples" className="btn btn-ghost" onClick={scrollToId('examples')}>
-            Explore examples
+          <a href="#live-prototype" className="btn btn-ghost" onClick={scrollToId('live-prototype')}>
+            Try the live prototype
           </a>
         </div>
-        <p className="hero-trust">Own the source code or let us manage the app for you.</p>
-        <p className="hero-support">
-          No need to hire a tech team. Tell us your workflow, and we&apos;ll build the first
-          working version.
+        <p className="hero-micro">
+          Mini builds start at &#8377;999. Own the source code or let us manage the app.
         </p>
 
         <div className="hero-visual" aria-hidden="true">
-          <div className="flow-box">Your workflow</div>
+          <div className="chaos-cluster">
+            <span className="chaos-chip chaos-1">&#128172; WhatsApp chaos</span>
+            <span className="chaos-chip chaos-2">&#128202; Excel mess</span>
+            <span className="chaos-chip chaos-3">&#128221; Sticky notes</span>
+          </div>
           <span className="flow-arrow">&rarr;</span>
-          <div className="flow-box flow-box-accent">Custom app</div>
+          <div className="flow-box flow-box-accent">&#129412; Purple Giraffe</div>
           <span className="flow-arrow">&rarr;</span>
-          <div className="flow-box">Source code / Managed service</div>
+          <div className="flow-box">&#10024; Clean little app</div>
         </div>
       </section>
 
-      <section className="problem">
-        <h2>Still running your business on WhatsApp, Excel and memory?</h2>
+      <section className="live-proto" id="live-prototype">
+        <p className="section-label">Live Prototype</p>
+        <h2>Try something real.</h2>
         <p className="section-sub">
-          That works in the beginning. But as orders, customers, tasks and follow-ups
-          grow, things start slipping.
+          Purple Giraffe Copilot is a working example. It shows how a specialised
+          workflow can become an interactive tool.
         </p>
-        <div className="problem-grid">
-          {PROBLEM_CARDS.map((c) => (
-            <div className="problem-card" key={c.title}>
-              <h3>{c.title}</h3>
-              <p>{c.text}</p>
-            </div>
-          ))}
+
+        <div className="proto-card">
+          <div className="proto-card-top">
+            <span className="proto-live-badge">Live</span>
+            <span className="proto-category">AI-assisted workflow example</span>
+          </div>
+          <h3>Purple Giraffe Copilot</h3>
+          <p>
+            A working prototype for specialised troubleshooting and question-answering.
+            It is one example of what Purple Giraffe can build when a workflow benefits
+            from AI-style guidance.
+          </p>
+          <ul className="proto-bullets">
+            <li>Try a real working prototype</li>
+            <li>See how a workflow can become a tool</li>
+            <li>Request a private version for your own process</li>
+            <li>AI is optional &mdash; practical apps come first</li>
+          </ul>
+          <div className="proto-actions">
+            <Link href="/apps/copilot" className="btn btn-primary">Try Copilot</Link>
+            <a href="#request" className="btn btn-ghost" onClick={scrollToId('request')}>Build a private version</a>
+          </div>
+          <p className="proto-footnote">
+            This is one example. Purple Giraffe also builds simple non-AI business apps.
+          </p>
         </div>
       </section>
 
-      <section className="build" id="what-we-build">
-        <h2>We build practical apps for everyday workflows.</h2>
-        <p className="section-sub">If you can explain the process, we can usually turn it into a simple app.</p>
-        <div className="build-grid">
-          {WHAT_WE_BUILD.map((b) => (
-            <div className="build-card" key={b.title}>
-              <h3>{b.title}</h3>
-              <p>{b.text}</p>
-              {b.examples && <p className="build-examples">{b.examples}</p>}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="gallery" id="examples">
-        <h2>Explore example apps.</h2>
+      <section className="ideas" id="app-ideas">
+        <h2>What could we build for you?</h2>
         <p className="section-sub">
-          These are sample ideas and prototypes. Your app can be simpler, larger or
-          completely different depending on your workflow.
+          A few starting points. Yours can be smaller, stranger, simpler, or completely different.
         </p>
-        <div className="gallery-grid">
-          {EXAMPLES.map((ex) => (
-            <article className="card" key={ex.id}>
-              <div className="card-top">
-                <span className={`card-category card-category-${ex.categoryColor}`}>{ex.category}</span>
-              </div>
-              <h3>{ex.title}</h3>
-              <p>{ex.description}</p>
-              {ex.features.length > 0 && (
-                <ul className="card-specs">
-                  {ex.features.map((f) => (
-                    <li key={f}>{f}</li>
-                  ))}
-                </ul>
-              )}
-              {ex.href.startsWith('/') ? (
-                <Link href={ex.href} className="card-cta">{ex.cta} &rarr;</Link>
-              ) : (
-                <a href={ex.href} className="card-cta" onClick={scrollToId('request')}>{ex.cta} &rarr;</a>
-              )}
+        <div className="ideas-grid">
+          {APP_IDEAS.map((idea) => (
+            <article className={`idea-card${idea.featured ? ' idea-card-featured' : ''}`} key={idea.id}>
+              <p className="idea-eyebrow">{idea.eyebrow}</p>
+              <h3>{idea.title}</h3>
+              <p className="idea-copy">{idea.copy}</p>
+              <p className="idea-tiny">{idea.tiny}</p>
+              <a href="#request" className="card-cta" onClick={scrollToId('request')}>{idea.cta} &rarr;</a>
             </article>
           ))}
         </div>
       </section>
 
       <section className="how" id="how-it-works">
-        <h2>How it works</h2>
+        <h2>From messy process to working app.</h2>
         <div className="how-list">
           {HOW_IT_WORKS.map((step, i) => (
             <div className="how-step" key={step.title}>
@@ -419,72 +299,67 @@ export default function Home() {
             </div>
           ))}
         </div>
+        <p className="how-footnote">Then we improve it once real users touch it.</p>
       </section>
 
       <section className="pricing" id="pricing">
-        <h2>Start small. Build what you need.</h2>
+        <h2>Start small. Don&apos;t overbuild.</h2>
         <p className="section-sub">
-          Most projects start with one clear workflow. Pricing depends on complexity,
-          users, integrations, data and whether you want us to manage the app.
+          Mini builds start at &#8377;999. Good for tiny tools, focused workflows and
+          first versions. Bigger business apps are quoted after we understand the scope.
         </p>
-        <div className="pricing-grid">
-          {PRICING_CARDS.map((p) => (
-            <div className="pricing-card" key={p.title}>
-              <h3>{p.title}</h3>
-              <p className="pricing-amount">{p.price}</p>
-              <p className="pricing-bestfor">{p.bestFor}</p>
-              <ul className="card-specs">
-                {p.includes.map((i) => <li key={i}>{i}</li>)}
-              </ul>
-              {p.timeline && <p className="pricing-timeline">Timeline: {p.timeline}</p>}
-              <a href="#request" className="card-cta" onClick={scrollToId('request')}>{p.cta} &rarr;</a>
+        <div className="pricing-blocks">
+          {PRICING_BLOCKS.map((b) => (
+            <div className="pricing-block" key={b.title}>
+              <h3>{b.title}</h3>
+              <p>{b.copy}</p>
+              <p className="pricing-block-price">{b.price}</p>
             </div>
           ))}
         </div>
-        <p className="pricing-note">Final pricing depends on scope. We keep the first version focused so you do not overbuild.</p>
+        <a href="#request" className="btn btn-primary" onClick={scrollToId('request')}>Start with a mini build</a>
+        <p className="pricing-note">
+          The &#8377;999 starting price is for very small builds. Final pricing depends
+          on complexity, integrations, hosting, support and timeline.
+        </p>
       </section>
 
-      <section className="ownership">
-        <h2>Own the app, or let us manage it.</h2>
-        <div className="ownership-grid">
-          <div className="ownership-col">
-            <h3>Source-code handover</h3>
-            <p>We can build the app and hand over the source code, deployment notes and basic documentation so you or your team can run it independently.</p>
-            <ul className="card-specs">
-              <li>Source code</li>
-              <li>Deployment notes</li>
-              <li>Basic documentation</li>
-              <li>Your repository/cloud if required</li>
-            </ul>
-          </div>
-          <div className="ownership-col">
-            <h3>Managed by Purple Giraffe</h3>
-            <p>If you do not want to handle hosting, maintenance, backups or changes, we can manage the app for you.</p>
-            <ul className="card-specs">
-              <li>Hosting support</li>
-              <li>Maintenance</li>
-              <li>Bug fixes</li>
-              <li>Small improvements</li>
-              <li>Monitoring and backups</li>
-            </ul>
-          </div>
+      <section className="ai-sprinkle">
+        <div className="ai-sprinkle-card">
+          <h2>AI, only where it helps.</h2>
+          <p>
+            Some workflows benefit from smart features &mdash; summarising long notes,
+            drafting replies, answering questions from documents, analysing uploads, or
+            creating a copilot for repeated troubleshooting. We add AI when it improves
+            the app, not because it sounds trendy.
+          </p>
+          <ul className="ai-examples-list">
+            {AI_EXAMPLES.map((a) => <li key={a}>{a}</li>)}
+          </ul>
         </div>
       </section>
 
-      <section className="who-for">
-        <h2>Built for people with specific workflows.</h2>
-        <ul className="who-list">
-          {WHO_FOR.map((w) => <li key={w}>{w}</li>)}
-        </ul>
+      <section className="ownership">
+        <h2>Keep it yours.</h2>
+        <div className="ownership-grid">
+          <div className="ownership-col">
+            <h3>Source code handover</h3>
+            <p>We build it, document the basics and hand over the code so you or your team can run it.</p>
+          </div>
+          <div className="ownership-col">
+            <h3>Managed by Purple Giraffe</h3>
+            <p>Don&apos;t want to deal with hosting, fixes, backups or changes? We can run it for you.</p>
+          </div>
+        </div>
       </section>
 
       <section className="request" id="request">
         <div className="request-inner">
-          <h2>Tell us what you want to build.</h2>
-          <p>Share the process you want to simplify. We will suggest the best first version.</p>
+          <h2>Tell us the workflow.</h2>
+          <p>No perfect requirement document needed. Messy explanations are welcome.</p>
 
           {status === 'success' ? (
-            <div className="form-success">Thanks. We will review your workflow and suggest the simplest first version.</div>
+            <div className="form-success">Thanks &mdash; we&apos;ve got your workflow and will follow up shortly.</div>
           ) : (
             <form onSubmit={handleSubmit} className="request-form">
               <div className="form-row">
@@ -497,37 +372,20 @@ export default function Home() {
                   <input type="text" value={form.contact} onChange={handleChange('contact')} required />
                 </label>
               </div>
+              <label>
+                What do you want to build?
+                <textarea rows="3" value={form.buildDescription} onChange={handleChange('buildDescription')} required />
+              </label>
+              <label>
+                How do you handle it today?
+                <textarea rows="3" value={form.currentProcess} onChange={handleChange('currentProcess')} placeholder="WhatsApp, Excel, paper, memory..." />
+              </label>
               <div className="form-row">
                 <label>
                   Business or personal use case?
                   <select value={form.useType} onChange={handleChange('useType')}>
                     <option value="">Select one</option>
                     {USE_TYPE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-                  </select>
-                </label>
-                <label>
-                  Who will use the app?
-                  <input type="text" value={form.whoWillUse} onChange={handleChange('whoWillUse')} placeholder="e.g. me, my team, my customers" />
-                </label>
-              </div>
-              <label>
-                What do you want to build?
-                <textarea rows="3" value={form.buildDescription} onChange={handleChange('buildDescription')} required />
-              </label>
-              <label>
-                How do you handle this today?
-                <textarea rows="3" value={form.currentProcess} onChange={handleChange('currentProcess')} placeholder="WhatsApp, Excel, paper, memory..." />
-              </label>
-              <label>
-                What should the app track or manage?
-                <textarea rows="3" value={form.whatToTrack} onChange={handleChange('whatToTrack')} />
-              </label>
-              <div className="form-row">
-                <label>
-                  Source-code handover or managed service?
-                  <select value={form.ownership} onChange={handleChange('ownership')}>
-                    <option value="">Select one</option>
-                    {OWNERSHIP_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
                   </select>
                 </label>
                 <label>
@@ -547,7 +405,7 @@ export default function Home() {
               </label>
               {status === 'error' && <div className="form-error">{errorMsg}</div>}
               <button type="submit" className="btn btn-primary" disabled={status === 'submitting'}>
-                {status === 'submitting' ? 'Sending\u2026' : 'Request build review'}
+                {status === 'submitting' ? 'Sending\u2026' : 'Send my workflow'}
               </button>
             </form>
           )}
@@ -632,14 +490,14 @@ export default function Home() {
         .nav-links {
           display: flex;
           align-items: center;
-          gap: 1.35rem;
+          gap: 1.3rem;
           flex-wrap: wrap;
           justify-content: flex-end;
         }
         .nav-links a {
           text-decoration: none;
           color: var(--pg-ink);
-          font-size: 0.9rem;
+          font-size: 0.88rem;
         }
         .nav-links a.nav-cta {
           background: var(--pg-ink);
@@ -667,61 +525,60 @@ export default function Home() {
         }
 
         .hero {
-          max-width: 820px;
+          max-width: 780px;
           margin: 0 auto;
-          padding: 4.5rem 1.5rem 3.5rem;
+          padding: 4rem 1.5rem 3rem;
           text-align: center;
         }
-        .hero-kicker {
-          font-family: var(--font-mono);
-          font-size: 0.85rem;
-          letter-spacing: 0.04em;
-          color: var(--pg-purple-deep);
-          margin-bottom: 1rem;
-        }
-        .cycle-word {
+        .hero-badge {
           display: inline-block;
-          font-weight: 600;
-          animation: cycleIn 0.4s ease;
-        }
-        @keyframes cycleIn {
-          from {
-            opacity: 0;
-            transform: translateY(4px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          font-family: var(--font-mono);
+          font-size: 0.75rem;
+          letter-spacing: 0.05em;
+          color: var(--pg-purple-deep);
+          background: rgba(139, 92, 246, 0.1);
+          border: 1px solid rgba(139, 92, 246, 0.25);
+          border-radius: 999px;
+          padding: 0.35rem 0.9rem;
+          margin-bottom: 1.25rem;
         }
         .hero h1 {
           font-family: var(--font-display);
-          font-size: clamp(2.1rem, 4.6vw, 3.1rem);
+          font-size: clamp(2rem, 4.6vw, 3rem);
           font-weight: 600;
           line-height: 1.2;
-          margin-bottom: 1.25rem;
+          margin-bottom: 0.6rem;
+        }
+        .cycle-word {
+          display: inline-block;
+          color: var(--pg-purple-deep);
+          animation: cycleIn 0.4s ease;
+        }
+        @keyframes cycleIn {
+          from { opacity: 0; transform: translateY(4px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .hero-static-line {
+          font-family: var(--font-display);
+          font-size: clamp(1.1rem, 2.4vw, 1.4rem);
+          color: var(--pg-muted);
+          margin-bottom: 1.5rem;
         }
         .hero-sub {
-          font-size: 1.1rem;
+          font-size: 1.05rem;
           line-height: 1.7;
           color: var(--pg-muted);
-          margin-bottom: 2rem;
+          margin-bottom: 1.75rem;
         }
         .hero-actions {
           display: flex;
           gap: 1rem;
           justify-content: center;
           flex-wrap: wrap;
-          margin-bottom: 1.25rem;
+          margin-bottom: 1rem;
         }
-        .hero-trust {
-          font-size: 0.9rem;
-          color: var(--pg-purple-deep);
-          font-weight: 600;
-          margin-bottom: 0.35rem;
-        }
-        .hero-support {
-          font-size: 0.9rem;
+        .hero-micro {
+          font-size: 0.85rem;
           color: var(--pg-muted);
           margin-bottom: 2.5rem;
         }
@@ -733,6 +590,30 @@ export default function Home() {
           gap: 0.75rem;
           flex-wrap: wrap;
         }
+        .chaos-cluster {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          justify-content: center;
+          max-width: 220px;
+        }
+        .chaos-chip {
+          font-size: 0.78rem;
+          font-family: var(--font-mono);
+          background: rgba(242, 169, 59, 0.14);
+          border: 1px dashed rgba(138, 90, 16, 0.35);
+          color: var(--pg-amber-deep);
+          border-radius: 8px;
+          padding: 0.35rem 0.6rem;
+          white-space: nowrap;
+        }
+        .chaos-1 { transform: rotate(-4deg); }
+        .chaos-2 { transform: rotate(3deg); }
+        .chaos-3 { transform: rotate(-2deg); }
+        .flow-arrow {
+          color: var(--pg-muted);
+          font-size: 1.1rem;
+        }
         .flow-box {
           background: var(--pg-card);
           border: 1px solid var(--pg-line);
@@ -740,16 +621,13 @@ export default function Home() {
           padding: 0.85rem 1.1rem;
           font-size: 0.9rem;
           font-weight: 500;
+          white-space: nowrap;
         }
         .flow-box-accent {
           border-color: var(--pg-purple);
-          background: rgba(139, 92, 246, 0.08);
+          background: rgba(139, 92, 246, 0.1);
           color: var(--pg-purple-deep);
           font-weight: 600;
-        }
-        .flow-arrow {
-          color: var(--pg-muted);
-          font-size: 1.1rem;
         }
 
         .btn {
@@ -790,170 +668,178 @@ export default function Home() {
 
         section > h2 {
           font-family: var(--font-display);
-          font-size: 1.65rem;
+          font-size: 1.6rem;
           font-weight: 600;
           margin-bottom: 0.6rem;
         }
-        .section-sub {
-          color: var(--pg-muted);
-          font-size: 1rem;
-          line-height: 1.6;
-          max-width: 680px;
-          margin-bottom: 2rem;
-        }
-
-        .problem {
-          max-width: 1120px;
-          margin: 0 auto;
-          padding: 4rem 1.5rem;
-          border-top: 1px solid var(--pg-line);
-        }
-        .problem-grid,
-        .build-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 1.5rem;
-        }
-        .problem-card,
-        .build-card {
-          background: var(--pg-card);
-          border: 1px solid var(--pg-line);
-          border-radius: 14px;
-          padding: 1.5rem;
-          transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
-        }
-        .problem-card:hover,
-        .build-card:hover {
-          transform: translateY(-3px);
-          border-color: var(--pg-purple);
-          box-shadow: 0 10px 24px -16px rgba(139, 92, 246, 0.4);
-        }
-        .problem-card h3,
-        .build-card h3 {
-          font-family: var(--font-display);
-          font-size: 1.1rem;
-          font-weight: 600;
+        .section-label {
+          font-family: var(--font-mono);
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          font-size: 0.75rem;
+          color: var(--pg-purple-deep);
           margin-bottom: 0.5rem;
         }
-        .problem-card p,
-        .build-card p {
+        .section-sub {
           color: var(--pg-muted);
+          font-size: 0.98rem;
           line-height: 1.6;
-          font-size: 0.95rem;
-        }
-        .build-examples {
-          margin-top: 0.6rem;
-          font-size: 0.85rem;
-          color: var(--pg-purple-deep);
+          max-width: 640px;
+          margin-bottom: 1.75rem;
         }
 
-        .build {
-          max-width: 1120px;
+        .live-proto {
+          max-width: 900px;
           margin: 0 auto;
-          padding: 1rem 1.5rem 4rem;
+          padding: 3rem 1.5rem;
+          border-top: 1px solid var(--pg-line);
         }
-
-        .gallery {
-          max-width: 1120px;
-          margin: 0 auto;
-          padding: 1rem 1.5rem 4rem;
-        }
-        .gallery-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 1.5rem;
-        }
-        .card {
+        .proto-card {
           background: var(--pg-card);
-          border: 1px solid var(--pg-line);
-          border-radius: 14px;
-          padding: 1.75rem;
+          border: 1px solid var(--pg-purple);
+          border-radius: 18px;
+          padding: 2rem;
+          box-shadow: 0 14px 32px -20px rgba(139, 92, 246, 0.5);
+        }
+        .proto-card-top {
           display: flex;
-          flex-direction: column;
-          gap: 0.9rem;
-          transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+          align-items: center;
+          gap: 0.6rem;
+          margin-bottom: 0.75rem;
         }
-        .card:hover {
-          transform: translateY(-3px);
-          border-color: var(--pg-purple);
-          box-shadow: 0 10px 24px -16px rgba(139, 92, 246, 0.4);
-        }
-        .card-top {
-          display: flex;
-        }
-        .card-category {
+        .proto-live-badge {
           font-family: var(--font-mono);
           font-size: 0.7rem;
-          letter-spacing: 0.05em;
+          letter-spacing: 0.06em;
           text-transform: uppercase;
-          border-radius: 6px;
-          padding: 0.25rem 0.55rem;
+          background: var(--pg-purple);
+          color: white;
+          border-radius: 999px;
+          padding: 0.25rem 0.65rem;
         }
-        .card-category-purple {
-          color: var(--pg-purple-deep);
-          background: rgba(139, 92, 246, 0.1);
-        }
-        .card-category-amber {
-          color: var(--pg-amber-deep);
-          background: rgba(242, 169, 59, 0.16);
-        }
-        .card-category-muted {
+        .proto-category {
+          font-family: var(--font-mono);
+          font-size: 0.75rem;
           color: var(--pg-muted);
-          background: rgba(107, 100, 120, 0.1);
         }
-        .card h3 {
+        .proto-card h3 {
           font-family: var(--font-display);
-          font-size: 1.2rem;
+          font-size: 1.5rem;
           font-weight: 600;
+          margin-bottom: 0.6rem;
         }
-        .card p {
+        .proto-card p {
           color: var(--pg-muted);
           line-height: 1.6;
-          font-size: 0.95rem;
+          margin-bottom: 1rem;
         }
-        .card-specs {
+        .proto-bullets {
           list-style: none;
           display: flex;
           flex-direction: column;
-          gap: 0.35rem;
-          font-size: 0.85rem;
+          gap: 0.4rem;
+          margin-bottom: 1.4rem;
+          font-size: 0.92rem;
           color: var(--pg-ink);
         }
-        .card-specs li {
-          padding-left: 1rem;
+        .proto-bullets li {
+          padding-left: 1.1rem;
           position: relative;
         }
-        .card-specs li::before {
+        .proto-bullets li::before {
           content: '–';
           position: absolute;
           left: 0;
           color: var(--pg-purple);
         }
-        .card :global(.card-cta),
-        .pricing-card :global(.card-cta) {
-          margin-top: auto;
+        .proto-actions {
+          display: flex;
+          gap: 1rem;
+          flex-wrap: wrap;
+          margin-bottom: 1rem;
+        }
+        .proto-footnote {
+          font-size: 0.82rem;
+          color: var(--pg-muted);
+          margin: 0;
+        }
+
+        .ideas {
+          max-width: 1120px;
+          margin: 0 auto;
+          padding: 3rem 1.5rem;
+        }
+        .ideas-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 1.25rem;
+        }
+        .idea-card {
+          background: var(--pg-card);
+          border: 1px solid var(--pg-line);
+          border-radius: 14px;
+          padding: 1.5rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+          transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+        }
+        .idea-card:hover {
+          transform: translateY(-3px);
+          border-color: var(--pg-purple);
+          box-shadow: 0 10px 24px -16px rgba(139, 92, 246, 0.4);
+        }
+        .idea-card-featured {
+          grid-column: span 2;
+          background: linear-gradient(135deg, rgba(139, 92, 246, 0.06), var(--pg-card));
+        }
+        .idea-eyebrow {
+          font-family: var(--font-mono);
+          font-size: 0.7rem;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+          color: var(--pg-purple-deep);
+        }
+        .idea-card h3 {
+          font-family: var(--font-display);
+          font-size: 1.15rem;
+          font-weight: 600;
+        }
+        .idea-copy {
+          color: var(--pg-muted);
+          font-size: 0.9rem;
+          line-height: 1.55;
+        }
+        .idea-tiny {
+          font-size: 0.82rem;
+          color: var(--pg-amber-deep);
+          font-style: italic;
+        }
+        .idea-card :global(.card-cta) {
+          margin-top: 0.4rem;
           align-self: flex-start;
           text-decoration: none;
           font-weight: 600;
+          font-size: 0.9rem;
           color: var(--pg-ink);
           border-bottom: 2px solid var(--pg-purple);
-          padding-bottom: 0.15rem;
+          padding-bottom: 0.1rem;
         }
-        .card :global(.card-cta:hover),
-        .pricing-card :global(.card-cta:hover) {
+        .idea-card :global(.card-cta:hover) {
           color: var(--pg-purple-deep);
         }
 
         .how {
-          max-width: 780px;
+          max-width: 720px;
           margin: 0 auto;
-          padding: 4rem 1.5rem;
+          padding: 3rem 1.5rem;
           border-top: 1px solid var(--pg-line);
         }
         .how-list {
           display: flex;
           flex-direction: column;
-          gap: 1.75rem;
+          gap: 1.5rem;
+          margin-bottom: 1rem;
         }
         .how-step {
           display: flex;
@@ -966,7 +852,7 @@ export default function Home() {
           left: 17px;
           top: 34px;
           width: 1px;
-          height: calc(100% + 1.75rem - 34px);
+          height: calc(100% + 1.5rem - 34px);
           background: var(--pg-line);
         }
         .how-num {
@@ -987,139 +873,163 @@ export default function Home() {
         }
         .how-step h3 {
           font-family: var(--font-display);
-          font-size: 1.1rem;
+          font-size: 1.05rem;
           font-weight: 600;
-          margin-bottom: 0.3rem;
+          margin-bottom: 0.25rem;
         }
         .how-step p {
           color: var(--pg-muted);
           line-height: 1.6;
-          font-size: 0.95rem;
+          font-size: 0.92rem;
+        }
+        .how-footnote {
+          font-size: 0.85rem;
+          color: var(--pg-muted);
+          font-style: italic;
         }
 
         .pricing {
-          max-width: 1120px;
+          max-width: 1000px;
+          margin: 0 auto;
+          padding: 3rem 1.5rem;
+          border-top: 1px solid var(--pg-line);
+          text-align: center;
+        }
+        .pricing .section-sub {
+          margin-left: auto;
+          margin-right: auto;
+        }
+        .pricing-blocks {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 1.25rem;
+          margin-bottom: 1.75rem;
+          text-align: left;
+        }
+        .pricing-block {
+          background: var(--pg-card);
+          border: 1px solid var(--pg-line);
+          border-radius: 14px;
+          padding: 1.4rem;
+        }
+        .pricing-block h3 {
+          font-family: var(--font-display);
+          font-size: 1.05rem;
+          font-weight: 600;
+          margin-bottom: 0.4rem;
+        }
+        .pricing-block p {
+          color: var(--pg-muted);
+          font-size: 0.88rem;
+          line-height: 1.5;
+          margin-bottom: 0.6rem;
+        }
+        .pricing-block-price {
+          font-family: var(--font-mono);
+          font-size: 0.82rem;
+          color: var(--pg-purple-deep);
+          font-weight: 600;
+        }
+        .pricing-note {
+          font-size: 0.82rem;
+          color: var(--pg-muted);
+          max-width: 520px;
+          margin: 1rem auto 0;
+        }
+
+        .ai-sprinkle {
+          max-width: 900px;
           margin: 0 auto;
           padding: 1rem 1.5rem 3rem;
         }
-        .pricing-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 1.5rem;
-          margin-bottom: 1.5rem;
-        }
-        .pricing-card {
+        .ai-sprinkle-card {
           background: var(--pg-card);
           border: 1px solid var(--pg-line);
           border-radius: 14px;
           padding: 1.75rem;
-          display: flex;
-          flex-direction: column;
-          gap: 0.7rem;
-          transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
         }
-        .pricing-card:hover {
-          transform: translateY(-3px);
-          border-color: var(--pg-purple);
-          box-shadow: 0 10px 24px -16px rgba(139, 92, 246, 0.4);
-        }
-        .pricing-card h3 {
-          font-family: var(--font-display);
-          font-size: 1.15rem;
-          font-weight: 600;
-        }
-        .pricing-amount {
-          font-family: var(--font-display);
+        .ai-sprinkle-card h2 {
           font-size: 1.3rem;
-          font-weight: 600;
+        }
+        .ai-sprinkle-card p {
+          color: var(--pg-muted);
+          font-size: 0.92rem;
+          line-height: 1.6;
+          max-width: 640px;
+          margin-bottom: 1rem;
+        }
+        .ai-examples-list {
+          list-style: none;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+        }
+        .ai-examples-list li {
+          font-family: var(--font-mono);
+          font-size: 0.78rem;
           color: var(--pg-purple-deep);
-        }
-        .pricing-bestfor {
-          color: var(--pg-muted);
-          font-size: 0.9rem;
-          line-height: 1.5;
-        }
-        .pricing-timeline {
-          font-size: 0.85rem;
-          color: var(--pg-muted);
-        }
-        .pricing-note {
-          color: var(--pg-muted);
-          font-size: 0.85rem;
+          background: rgba(139, 92, 246, 0.07);
+          border-radius: 6px;
+          padding: 0.3rem 0.6rem;
         }
 
         .ownership {
           max-width: 1120px;
           margin: 0 auto;
-          padding: 4rem 1.5rem;
+          padding: 3rem 1.5rem;
           border-top: 1px solid var(--pg-line);
         }
         .ownership-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
-          gap: 2rem;
+          gap: 1.5rem;
+        }
+        .ownership-col {
+          background: var(--pg-card);
+          border: 1px solid var(--pg-line);
+          border-radius: 14px;
+          padding: 1.5rem;
         }
         .ownership-col h3 {
           font-family: var(--font-display);
-          font-size: 1.15rem;
+          font-size: 1.1rem;
           font-weight: 600;
           margin-bottom: 0.5rem;
         }
         .ownership-col p {
           color: var(--pg-muted);
           line-height: 1.6;
-          font-size: 0.95rem;
-          margin-bottom: 0.9rem;
-        }
-
-        .who-for {
-          max-width: 1120px;
-          margin: 0 auto;
-          padding: 1rem 1.5rem 4rem;
-        }
-        .who-list {
-          list-style: none;
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.75rem;
-        }
-        .who-list li {
-          font-size: 0.9rem;
-          color: var(--pg-ink);
-          background: var(--pg-card);
-          border: 1px solid var(--pg-line);
-          border-radius: 999px;
-          padding: 0.55rem 1.1rem;
+          font-size: 0.92rem;
         }
 
         .request {
           background: var(--pg-ink);
           color: var(--pg-paper);
-          padding: 4.5rem 1.5rem;
+          padding: 3.5rem 1.5rem;
         }
         .request-inner {
-          max-width: 640px;
+          max-width: 600px;
           margin: 0 auto;
         }
         .request-inner h2 {
           font-family: var(--font-display);
-          font-size: 1.75rem;
+          font-size: 1.6rem;
           font-weight: 600;
           margin-bottom: 0.5rem;
         }
         .request-inner > p {
           color: rgba(250, 249, 252, 0.7);
-          margin-bottom: 2rem;
+          margin-bottom: 1.75rem;
         }
         .request-form {
           display: flex;
           flex-direction: column;
-          gap: 1.1rem;
+          gap: 1rem;
         }
         .form-row {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 1.1rem;
+          gap: 1rem;
         }
         .request-form label {
           display: flex;
@@ -1134,14 +1044,14 @@ export default function Home() {
           background: rgba(255, 255, 255, 0.06);
           border: 1px solid rgba(255, 255, 255, 0.18);
           border-radius: 8px;
-          padding: 0.7rem 0.85rem;
+          padding: 0.65rem 0.85rem;
           color: var(--pg-paper);
           font-size: 0.95rem;
           font-family: inherit;
         }
         .request-form textarea {
           resize: vertical;
-          min-height: 80px;
+          min-height: 70px;
         }
         .request-form select option {
           color: var(--pg-ink);
@@ -1167,14 +1077,14 @@ export default function Home() {
         }
 
         .faq {
-          max-width: 780px;
+          max-width: 720px;
           margin: 0 auto;
-          padding: 4rem 1.5rem;
+          padding: 3rem 1.5rem;
         }
         .faq-list {
           display: flex;
           flex-direction: column;
-          gap: 0.75rem;
+          gap: 0.65rem;
         }
         .faq-item {
           border: 1px solid var(--pg-line);
@@ -1191,8 +1101,8 @@ export default function Home() {
           background: none;
           border: none;
           text-align: left;
-          padding: 1rem 1.25rem;
-          font-size: 0.95rem;
+          padding: 0.9rem 1.15rem;
+          font-size: 0.92rem;
           font-weight: 500;
           color: var(--pg-ink);
           cursor: pointer;
@@ -1203,9 +1113,9 @@ export default function Home() {
           flex-shrink: 0;
         }
         .faq-answer {
-          padding: 0 1.25rem 1.1rem;
+          padding: 0 1.15rem 1rem;
           color: var(--pg-muted);
-          font-size: 0.9rem;
+          font-size: 0.88rem;
           line-height: 1.6;
         }
 
@@ -1221,20 +1131,24 @@ export default function Home() {
         }
 
         @media (max-width: 768px) {
-          .problem-grid,
-          .build-grid,
-          .gallery-grid,
-          .pricing-grid,
+          .ideas-grid,
+          .pricing-blocks,
           .ownership-grid {
             grid-template-columns: 1fr;
           }
+          .idea-card-featured {
+            grid-column: span 1;
+          }
           .nav-links {
-            gap: 0.9rem;
+            gap: 0.8rem;
           }
         }
         @media (max-width: 640px) {
           .form-row {
             grid-template-columns: 1fr;
+          }
+          .chaos-cluster {
+            max-width: 100%;
           }
         }
         @media (prefers-reduced-motion: reduce) {
