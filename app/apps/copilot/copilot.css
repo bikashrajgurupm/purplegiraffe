@@ -167,6 +167,24 @@
   margin-bottom: 0.75rem;
 }
 
+.repositioning-note {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  max-width: 480px;
+  line-height: 1.6;
+  margin-bottom: 2.25rem;
+}
+
+.repositioning-note a {
+  color: var(--primary-purple);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.repositioning-note a:hover {
+  color: var(--primary-dark);
+}
+
 .example-questions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
