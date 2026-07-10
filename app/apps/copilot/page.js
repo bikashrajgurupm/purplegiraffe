@@ -743,8 +743,14 @@ export default function Home() {
                 <div className="welcome-logo">
                   <img src="/logo.png" alt="PurpleGiraffe" style={{width: '80px', height: '80px'}} />
                 </div>
-                <h2 className="welcome-title">Welcome to {APP_NAME}</h2>
+               <h2 className="welcome-title">Welcome to {APP_NAME}</h2>
                 <p className="welcome-subtitle">Your AI expert for app monetization</p>
+                <p className="repositioning-note">
+                  One example of what Purple Giraffe builds — for workflows that
+                  benefit from AI-style Q&A. Not every build uses AI; many are
+                  simple, practical business apps.{' '}
+                  <Link href="/#what-we-build">See what else we build →</Link>
+                </p>
                 
                 {!user && (
                   <div className="question-counter-display">
