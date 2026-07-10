@@ -982,7 +982,7 @@ export default function Home() {
         <div className="mobile-pricing-overlay" onClick={() => setShowMobilePricing(false)}>
           <div className="mobile-pricing-modal" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-pricing-header">
-              <h3>Choose Your Plan</h3>
+               <h3>Copilot Access</h3>
               <button 
                 className="mobile-pricing-close"
                 onClick={() => setShowMobilePricing(false)}
