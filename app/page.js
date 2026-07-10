@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
+const HERO_CYCLE_WORDS = ['bakeries', 'salons', 'shops', 'consultants', 'founders', 'your workflow'];
+
 const NAV_LINKS = [
   { label: 'Examples', href: '#examples' },
   { label: 'What we build', href: '#what-we-build' },
@@ -78,6 +80,7 @@ const EXAMPLES = [
     id: 'bakery',
     title: 'Bakery Order Manager',
     category: 'Small Business',
+    categoryColor: 'purple',
     description: 'A custom app for bakeries to manage cake orders, delivery dates, payments, customer notes, flavours, sizes, add-ons and staff tasks.',
     features: ['Custom order form', 'Order status dashboard', 'Advance/payment tracker', 'Delivery calendar', 'Customer reminders'],
     cta: 'Build something like this',
@@ -87,6 +90,7 @@ const EXAMPLES = [
     id: 'booking',
     title: 'Appointment & Booking Manager',
     category: 'Service Business',
+    categoryColor: 'amber',
     description: 'A simple app for managing bookings, customer details, appointment slots, reminders and status.',
     features: ['Booking requests', 'Calendar view', 'Customer history', 'Reminder workflow'],
     cta: 'Build something like this',
@@ -96,6 +100,7 @@ const EXAMPLES = [
     id: 'inventory',
     title: 'Inventory & Reorder Tracker',
     category: 'Operations',
+    categoryColor: 'purple',
     description: 'Track stock levels, supplier details, daily usage, low-stock alerts and reorder history.',
     features: ['Product list', 'Stock in/out', 'Low stock alerts', 'Supplier notes'],
     cta: 'Build something like this',
@@ -105,6 +110,7 @@ const EXAMPLES = [
     id: 'leads',
     title: 'Lead & Follow-up Tracker',
     category: 'Sales',
+    categoryColor: 'amber',
     description: 'Capture incoming leads, track conversation status, set follow-up reminders and generate simple summaries.',
     features: ['Lead capture form', 'Status pipeline', 'Follow-up reminders', 'Notes and tasks'],
     cta: 'Build something like this',
@@ -114,6 +120,7 @@ const EXAMPLES = [
     id: 'copilot',
     title: 'Purple Giraffe Copilot',
     category: 'AI Feature Example',
+    categoryColor: 'muted',
     description: 'An example of an AI-assisted tool for specialised troubleshooting and question-answering. Useful when a workflow needs expert-style guidance or document/chat support.',
     features: [],
     cta: 'Try prototype',
@@ -123,6 +130,7 @@ const EXAMPLES = [
     id: 'yours',
     title: 'Your Own Workflow',
     category: 'Custom',
+    categoryColor: 'amber',
     description: 'Have a process that does not fit any existing tool? Tell us how you work today, and we will suggest the simplest app version.',
     features: [],
     cta: 'Tell us your idea',
@@ -202,6 +210,7 @@ const OWNERSHIP_OPTIONS = ['Source-code handover', 'Managed service', 'Not sure 
 
 export default function Home() {
   const [returningUser, setReturningUser] = useState(null);
+  const [heroWordIndex, setHeroWordIndex] = useState(0);
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
   const [form, setForm] = useState({
     name: '',
@@ -228,6 +237,15 @@ export default function Home() {
     } catch (e) {
       // malformed or missing localStorage data — safe to ignore
     }
+  }, []);
+
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) return;
+    const interval = setInterval(() => {
+      setHeroWordIndex((i) => (i + 1) % HERO_CYCLE_WORDS.length);
+    }, 2000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleChange = (field) => (e) =>
@@ -292,6 +310,12 @@ export default function Home() {
       )}
 
       <section className="hero">
+        <p className="hero-kicker">
+          Built for{' '}
+          <span className="cycle-word" key={HERO_CYCLE_WORDS[heroWordIndex]}>
+            {HERO_CYCLE_WORDS[heroWordIndex]}
+          </span>
+        </p>
         <h1>Custom apps for your business, built around the way you work.</h1>
         <p className="hero-sub">
           Purple Giraffe helps businesses and individuals turn repeated manual work into
@@ -361,7 +385,7 @@ export default function Home() {
           {EXAMPLES.map((ex) => (
             <article className="card" key={ex.id}>
               <div className="card-top">
-                <span className="card-category">{ex.category}</span>
+                <span className={`card-category card-category-${ex.categoryColor}`}>{ex.category}</span>
               </div>
               <h3>{ex.title}</h3>
               <p>{ex.description}</p>
@@ -648,6 +672,28 @@ export default function Home() {
           padding: 4.5rem 1.5rem 3.5rem;
           text-align: center;
         }
+        .hero-kicker {
+          font-family: var(--font-mono);
+          font-size: 0.85rem;
+          letter-spacing: 0.04em;
+          color: var(--pg-purple-deep);
+          margin-bottom: 1rem;
+        }
+        .cycle-word {
+          display: inline-block;
+          font-weight: 600;
+          animation: cycleIn 0.4s ease;
+        }
+        @keyframes cycleIn {
+          from {
+            opacity: 0;
+            transform: translateY(4px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
         .hero h1 {
           font-family: var(--font-display);
           font-size: clamp(2.1rem, 4.6vw, 3.1rem);
@@ -774,6 +820,13 @@ export default function Home() {
           border: 1px solid var(--pg-line);
           border-radius: 14px;
           padding: 1.5rem;
+          transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+        }
+        .problem-card:hover,
+        .build-card:hover {
+          transform: translateY(-3px);
+          border-color: var(--pg-purple);
+          box-shadow: 0 10px 24px -16px rgba(139, 92, 246, 0.4);
         }
         .problem-card h3,
         .build-card h3 {
@@ -818,6 +871,12 @@ export default function Home() {
           display: flex;
           flex-direction: column;
           gap: 0.9rem;
+          transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+        }
+        .card:hover {
+          transform: translateY(-3px);
+          border-color: var(--pg-purple);
+          box-shadow: 0 10px 24px -16px rgba(139, 92, 246, 0.4);
         }
         .card-top {
           display: flex;
@@ -827,10 +886,20 @@ export default function Home() {
           font-size: 0.7rem;
           letter-spacing: 0.05em;
           text-transform: uppercase;
-          color: var(--pg-purple-deep);
-          background: rgba(139, 92, 246, 0.08);
           border-radius: 6px;
           padding: 0.25rem 0.55rem;
+        }
+        .card-category-purple {
+          color: var(--pg-purple-deep);
+          background: rgba(139, 92, 246, 0.1);
+        }
+        .card-category-amber {
+          color: var(--pg-amber-deep);
+          background: rgba(242, 169, 59, 0.16);
+        }
+        .card-category-muted {
+          color: var(--pg-muted);
+          background: rgba(107, 100, 120, 0.1);
         }
         .card h3 {
           font-family: var(--font-display);
@@ -855,7 +924,7 @@ export default function Home() {
           position: relative;
         }
         .card-specs li::before {
-          content: '\u2013';
+          content: '–';
           position: absolute;
           left: 0;
           color: var(--pg-purple);
@@ -889,6 +958,16 @@ export default function Home() {
         .how-step {
           display: flex;
           gap: 1.1rem;
+          position: relative;
+        }
+        .how-step:not(:last-child)::after {
+          content: '';
+          position: absolute;
+          left: 17px;
+          top: 34px;
+          width: 1px;
+          height: calc(100% + 1.75rem - 34px);
+          background: var(--pg-line);
         }
         .how-num {
           flex-shrink: 0;
@@ -903,6 +982,8 @@ export default function Home() {
           font-family: var(--font-display);
           font-weight: 600;
           font-size: 0.95rem;
+          position: relative;
+          z-index: 1;
         }
         .how-step h3 {
           font-family: var(--font-display);
@@ -935,6 +1016,12 @@ export default function Home() {
           display: flex;
           flex-direction: column;
           gap: 0.7rem;
+          transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+        }
+        .pricing-card:hover {
+          transform: translateY(-3px);
+          border-color: var(--pg-purple);
+          box-shadow: 0 10px 24px -16px rgba(139, 92, 246, 0.4);
         }
         .pricing-card h3 {
           font-family: var(--font-display);
