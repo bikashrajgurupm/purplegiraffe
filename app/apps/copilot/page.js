@@ -746,10 +746,10 @@ export default function Home() {
                <h2 className="welcome-title">Welcome to {APP_NAME}</h2>
                 <p className="welcome-subtitle">Your AI expert for app monetization</p>
                 <p className="repositioning-note">
-                  One example of what Purple Giraffe builds — for workflows that
-                  benefit from AI-style Q&A. Not every build uses AI; many are
-                  simple, practical business apps.{' '}
-                  <Link href="/#what-we-build">See what else we build →</Link>
+                  Purple Giraffe Copilot is one example of what Purple Giraffe builds.
+                  Not every build uses AI. Many are simple practical apps for tracking,
+                  booking, orders, delivery, inventory or personal workflows.{' '}
+                  <Link href="/#app-ideas">See more ideas →</Link>
                 </p>
                 
                 {!user && (
