@@ -134,7 +134,7 @@ export default function PricingTiers({
         }
 
         .free-features li::before {
-          content: '\u2013';
+          content: '–';
           position: absolute;
           left: 0;
           color: var(--primary-purple);
