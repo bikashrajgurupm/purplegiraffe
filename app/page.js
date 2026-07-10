@@ -13,6 +13,10 @@ const PROTOTYPES = [
     description:
       'Answers FAQs and debugs live issues for adtech and ad-monetization teams: eCPM drops, waterfall setup, fill-rate troubleshooting.',
     specs: ['Chat + file analysis', 'Built-in knowledge base', 'Free to try'],
+    peek: {
+      q: 'My eCPM dropped 40% overnight',
+      a: "Let's check your waterfall priority first…",
+    },
     href: '/apps/copilot',
     cta: 'Try the prototype',
   },
@@ -25,6 +29,10 @@ const PROTOTYPES = [
     description:
       'Patient FAQs, appointment triage, and intake support for clinics and small practices.',
     specs: ['Patient-facing chat', 'Appointment triage', 'Intake forms'],
+    peek: {
+      q: "I've had a headache for 3 days",
+      a: 'Let\u2019s ask a few quick questions first…',
+    },
     href: null,
     cta: null,
   },
@@ -37,6 +45,10 @@ const PROTOTYPES = [
     description:
       "Portfolio tracking and plain-language financial Q&A, built around one person's real accounts and goals.",
     specs: ['Portfolio dashboard', 'Plain-language Q&A', 'Built for one user'],
+    peek: {
+      q: 'Am I on track to retire by 55?',
+      a: 'Based on your savings rate so far…',
+    },
     href: null,
     cta: null,
   },
@@ -49,9 +61,20 @@ const PROTOTYPES = [
     description:
       'Not seeing your use case? That is normal this early. Tell us what you need below.',
     specs: [],
+    peek: null,
     href: '#request',
     cta: 'Request a build',
   },
+];
+
+const CYCLE_WORDS = ['portfolio', 'business', 'app', 'next idea'];
+
+const PELLETS = [
+  "You're always in control",
+  'Built around how you work',
+  'Free to try',
+  'Built fast, refined faster',
+  'Open process, no lock-in',
 ];
 
 const USE_CASE_OPTIONS = [
@@ -63,6 +86,7 @@ const USE_CASE_OPTIONS = [
 
 export default function Home() {
   const [returningUser, setReturningUser] = useState(null);
+  const [wordIndex, setWordIndex] = useState(0);
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -83,6 +107,15 @@ export default function Home() {
     } catch (e) {
       // malformed or missing localStorage data — safe to ignore
     }
+  }, []);
+
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) return;
+    const interval = setInterval(() => {
+      setWordIndex((i) => (i + 1) % CYCLE_WORDS.length);
+    }, 2200);
+    return () => clearInterval(interval);
   }, []);
 
   const handleChange = (field) => (e) =>
@@ -140,12 +173,20 @@ export default function Home() {
       )}
 
       <section className="hero">
-        <p className="eyebrow">AI application studio</p>
-        <h1>Try the tool before you buy the tool.</h1>
+        <div className="hero-glow" aria-hidden="true" />
+        <p className="eyebrow">AI that builds with you</p>
+        <h1>
+          Build your{' '}
+          <span className="cycle-word" key={CYCLE_WORDS[wordIndex]}>
+            {CYCLE_WORDS[wordIndex]}
+          </span>
+          , in minutes.
+        </h1>
         <p className="hero-sub">
-          Purple Giraffe designs and builds custom AI applications for adtech teams,
-          clinics, advisors, and anyone else with a workflow worth automating. Every
-          build starts as a working prototype you can use first.
+          From a personal portfolio to a full business application, whatever you&apos;re
+          picturing, we&apos;ll build a working version of it, fast. You stay in control
+          the whole way: customize it, try it for free, and only pay once it&apos;s
+          actually yours.
         </p>
         <div className="hero-actions">
           <a href="#prototypes" className="btn btn-primary" onClick={scrollToId('prototypes')}>
@@ -155,6 +196,14 @@ export default function Home() {
             Request a build
           </a>
         </div>
+      </section>
+
+      <section className="pellets">
+        <ul className="pellets-list">
+          {PELLETS.map((p) => (
+            <li key={p}>{p}</li>
+          ))}
+        </ul>
       </section>
 
       <section className="how">
@@ -177,6 +226,11 @@ export default function Home() {
 
       <section className="gallery" id="prototypes">
         <h2>Prototypes</h2>
+        <p className="gallery-legend">
+          <strong>Live</strong> ones are ready to click into and try right now. Everything
+          else just hasn&apos;t been pre-built yet — we can build any of it for you. Tell us
+          your version below.
+        </p>
         <div className="gallery-grid">
           {PROTOTYPES.map((p) => (
             <article className={`card card-${p.status}`} key={p.id}>
@@ -186,6 +240,12 @@ export default function Home() {
               </div>
               <h3>{p.name}</h3>
               <p>{p.description}</p>
+              {p.peek && (
+                <div className="card-peek" aria-hidden="true">
+                  <div className="peek-bubble peek-q">{p.peek.q}</div>
+                  <div className="peek-bubble peek-a">{p.peek.a}</div>
+                </div>
+              )}
               {p.specs.length > 0 && (
                 <ul className="card-specs">
                   {p.specs.map((s) => (
@@ -352,12 +412,28 @@ export default function Home() {
         }
 
         .hero {
+          position: relative;
+          overflow: hidden;
           max-width: 780px;
           margin: 0 auto;
           padding: 5rem 1.5rem 4rem;
           text-align: center;
         }
+        .hero-glow {
+          position: absolute;
+          top: -100px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 680px;
+          height: 420px;
+          background: radial-gradient(closest-side, rgba(139, 92, 246, 0.16), transparent);
+          filter: blur(6px);
+          z-index: 0;
+          pointer-events: none;
+        }
         .eyebrow {
+          position: relative;
+          z-index: 1;
           font-family: var(--font-mono);
           text-transform: uppercase;
           letter-spacing: 0.12em;
@@ -366,19 +442,40 @@ export default function Home() {
           margin-bottom: 1rem;
         }
         .hero h1 {
+          position: relative;
+          z-index: 1;
           font-family: var(--font-display);
           font-size: clamp(2.25rem, 5vw, 3.5rem);
           font-weight: 600;
           line-height: 1.15;
           margin-bottom: 1.25rem;
         }
+        .cycle-word {
+          display: inline-block;
+          color: var(--pg-purple-deep);
+          animation: cycleIn 0.4s ease;
+        }
+        @keyframes cycleIn {
+          from {
+            opacity: 0;
+            transform: translateY(4px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
         .hero-sub {
+          position: relative;
+          z-index: 1;
           font-size: 1.125rem;
           line-height: 1.7;
           color: var(--pg-muted);
           margin-bottom: 2.25rem;
         }
         .hero-actions {
+          position: relative;
+          z-index: 1;
           display: flex;
           gap: 1rem;
           justify-content: center;
@@ -421,6 +518,28 @@ export default function Home() {
           transform: none;
         }
 
+        .pellets {
+          max-width: 1120px;
+          margin: 0 auto;
+          padding: 0 1.5rem 3rem;
+        }
+        .pellets-list {
+          list-style: none;
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 0.75rem;
+        }
+        .pellets-list li {
+          font-family: var(--font-mono);
+          font-size: 0.8rem;
+          color: var(--pg-purple-deep);
+          background: rgba(139, 92, 246, 0.08);
+          border: 1px solid var(--pg-line);
+          border-radius: 999px;
+          padding: 0.5rem 1rem;
+        }
+
         .how {
           max-width: 1120px;
           margin: 0 auto;
@@ -461,7 +580,17 @@ export default function Home() {
           font-family: var(--font-display);
           font-size: 1.75rem;
           font-weight: 600;
+          margin-bottom: 0.75rem;
+        }
+        .gallery-legend {
+          color: var(--pg-muted);
+          font-size: 0.9rem;
+          line-height: 1.6;
+          max-width: 640px;
           margin-bottom: 2rem;
+        }
+        .gallery-legend strong {
+          color: var(--pg-amber-deep);
         }
         .gallery-grid {
           display: grid;
@@ -536,6 +665,32 @@ export default function Home() {
         .card-specs li::before {
           content: '· ';
           color: var(--pg-purple);
+        }
+        .card-peek {
+          display: flex;
+          flex-direction: column;
+          gap: 0.4rem;
+          background: var(--pg-paper);
+          border: 1px solid var(--pg-line);
+          border-radius: 10px;
+          padding: 0.75rem;
+        }
+        .peek-bubble {
+          font-size: 0.8rem;
+          line-height: 1.4;
+          padding: 0.45rem 0.7rem;
+          border-radius: 8px;
+          max-width: 90%;
+        }
+        .peek-q {
+          align-self: flex-end;
+          background: var(--pg-ink);
+          color: var(--pg-paper);
+        }
+        .peek-a {
+          align-self: flex-start;
+          background: rgba(139, 92, 246, 0.1);
+          color: var(--pg-purple-deep);
         }
         .card :global(.card-cta) {
           margin-top: auto;
