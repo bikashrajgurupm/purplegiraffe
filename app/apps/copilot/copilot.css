@@ -164,7 +164,7 @@
 .welcome-subtitle {
   font-size: 1.125rem;
   color: var(--text-secondary);
-  margin-bottom: 3rem;
+  margin-bottom: 0.75rem;
 }
 
 .example-questions {
