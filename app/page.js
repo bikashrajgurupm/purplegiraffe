@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-const HERO_WORDS = ['booking board','delivery tracker', 'clinic desk', 'customer portal', 'order dashboard', 'personal tool'];
+const HERO_WORDS = ['clinic desk', 'delivery tracker', 'booking board', 'customer portal', 'order dashboard', 'personal tool'];
 
 const NAV_LINKS = [
   { label: 'Live Prototype', href: '#live-prototype' },
@@ -221,7 +221,7 @@ export default function Home() {
             Tell us your workflow
           </a>
           <a href="#live-prototype" className="btn btn-ghost" onClick={scrollToId('live-prototype')}>
-           Explore live prototypes
+            Try the live prototype
           </a>
         </div>
         <p className="hero-micro">
@@ -237,7 +237,7 @@ export default function Home() {
           <span className="flow-arrow">&rarr;</span>
           <div className="flow-box flow-box-accent">&#129412; Purple Giraffe</div>
           <span className="flow-arrow">&rarr;</span>
-          <div className="flow-box">&#10024; Your custom app</div>
+          <div className="flow-box">&#10024; Clean little app</div>
         </div>
       </section>
 
@@ -269,7 +269,7 @@ export default function Home() {
             <li>AI is optional &mdash; practical apps come first</li>
           </ul>
           <div className="proto-actions">
-            <Link href="/apps/copilot" className="btn btn-primary">Try Copilot</Link>
+            <Link href="/apps/copilot" className="btn btn-primary btn-copilot-cta">Try Copilot &rarr;</Link>
             <a href="#request" className="btn btn-ghost" onClick={scrollToId('request')}>Build a private version</a>
           </div>
           <p className="proto-footnote">
@@ -767,6 +767,13 @@ export default function Home() {
           gap: 1rem;
           flex-wrap: wrap;
           margin-bottom: 1rem;
+        }
+        .btn-copilot-cta {
+          background: var(--pg-purple);
+          color: white;
+        }
+        .btn-copilot-cta:hover {
+          background: var(--pg-purple-deep);
         }
         .proto-footnote {
           font-size: 0.82rem;
