@@ -17,7 +17,7 @@ const APP_IDEAS = [
   {
     id: 'docs',
     group: 'business',
-    title: 'Doc Whisperer',
+    title: 'AI Doc Whisperer',
     eyebrow: 'For B2B teams \u2014 HR, legal, compliance and training',
     copy: 'Built on the same technology as Purple Giraffe Copilot: ask questions about your own documents and get grounded answers, not guesses. Upload PDFs, Word files or website content, summarise, compare versions, extract action items, or turn them into checklists.',
     tiny: 'Could become an Employee Handbook Assistant, a Policy Copilot, or a Course Material Assistant.',
@@ -336,7 +336,7 @@ export default function Home() {
             <li>Try a real working prototype</li>
             <li>See how a workflow can become a tool</li>
             <li>Request a private version for your own process</li>
-            <li>AI is optional &mdash; practical apps come first</li>
+            <li>Built AI-first, to show what&apos;s possible</li>
           </ul>
           <div className="proto-actions">
             <Link
