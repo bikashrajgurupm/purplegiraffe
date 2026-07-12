@@ -437,6 +437,37 @@ export default function Home() {
         <p className="how-footnote">Then we improve it once real users touch it.</p>
       </section>
 
+      <section className="builder">
+        <div className="builder-grid">
+          <div className="builder-photo" aria-hidden="true">
+            <div className="builder-photo-placeholder">
+              <span className="builder-photo-icon">&#128100;</span>
+              <span className="builder-photo-label">Founder photo coming soon</span>
+            </div>
+          </div>
+          <div className="builder-content">
+            <p className="section-label">Meet the builder</p>
+            <h2>Built personally, around the way you work.</h2>
+            <p className="builder-body">
+              Purple Giraffe is a founder-led app studio. You work directly with
+              the person designing and building your application &mdash; without
+              layers of salespeople or project managers.
+            </p>
+            <p className="builder-body">
+              Start with an idea, spreadsheet, repeated task or messy workflow.
+              It can be for your business, your customers or simply for yourself.
+            </p>
+            <p className="builder-highlight">
+              See an example you like? Purple Giraffe can build your own private
+              version with the features, branding and workflow that suit you.
+            </p>
+            <a href="#request" className="btn btn-primary" onClick={scrollToId('request')}>
+              Build my version
+            </a>
+          </div>
+        </div>
+      </section>
+
       <section className="pricing" id="pricing">
         <h2>Start small. Don&apos;t overbuild.</h2>
         <p className="section-sub">
@@ -1044,6 +1075,61 @@ export default function Home() {
           font-style: italic;
         }
 
+        .builder {
+          max-width: 1120px;
+          margin: 0 auto;
+          padding: 3rem 1.5rem;
+          border-top: 1px solid var(--pg-line);
+        }
+        .builder-grid {
+          display: grid;
+          grid-template-columns: 240px 1fr;
+          gap: 2.5rem;
+          align-items: start;
+        }
+        .builder-photo-placeholder {
+          aspect-ratio: 1;
+          border-radius: 16px;
+          background: var(--pg-card);
+          border: 1px dashed var(--pg-line);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 0.6rem;
+          color: var(--pg-muted);
+        }
+        .builder-photo-icon {
+          font-size: 2.5rem;
+          opacity: 0.5;
+        }
+        .builder-photo-label {
+          font-family: var(--font-mono);
+          font-size: 0.72rem;
+          text-align: center;
+          padding: 0 1.25rem;
+          line-height: 1.5;
+        }
+        .builder-content h2 {
+          margin-bottom: 1rem;
+        }
+        .builder-body {
+          color: var(--pg-muted);
+          font-size: 1rem;
+          line-height: 1.7;
+          margin-bottom: 1rem;
+        }
+        .builder-highlight {
+          font-family: var(--font-display);
+          font-weight: 600;
+          font-size: 1.05rem;
+          color: var(--pg-ink);
+          line-height: 1.5;
+          border-left: 3px solid var(--pg-purple);
+          padding-left: 1rem;
+          margin: 1.5rem 0 1.75rem;
+        }
+
         .pricing {
           max-width: 1000px;
           margin: 0 auto;
@@ -1289,11 +1375,16 @@ export default function Home() {
         @media (max-width: 768px) {
           .ideas-grid,
           .pricing-blocks,
-          .ownership-grid {
+          .ownership-grid,
+          .builder-grid {
             grid-template-columns: 1fr;
           }
           .idea-card-featured {
             grid-column: span 1;
+          }
+          .builder-photo-placeholder {
+            max-width: 220px;
+            margin: 0 auto;
           }
           .nav-links {
             gap: 0.8rem;
