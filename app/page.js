@@ -17,7 +17,7 @@ const APP_IDEAS = [
   {
     id: 'docs',
     group: 'business',
-    title: 'AI Doc Whisperer',
+    title: 'Document Copilot',
     eyebrow: 'For B2B teams \u2014 HR, legal, compliance and training',
     copy: 'Built on the same technology as Purple Giraffe Copilot: ask questions about your own documents and get grounded answers, not guesses. Upload PDFs, Word files or website content, summarise, compare versions, extract action items, or turn them into checklists.',
     tiny: 'Could become an Employee Handbook Assistant, a Policy Copilot, or a Course Material Assistant.',
