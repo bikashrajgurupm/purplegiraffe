@@ -71,6 +71,14 @@ const APP_IDEAS = [
     tiny: 'Your weird system, but cleaner.',
     cta: 'Build my personal tool',
   },
+  {
+    id: 'docs',
+    title: 'Doc Whisperer',
+    eyebrow: 'For HR, legal, compliance and training teams',
+    copy: 'Upload PDFs, Word files or website content and ask questions in plain language, with source references instead of guesses. Summarise long documents, compare two versions, extract action items, or turn them into checklists.',
+    tiny: 'Could become an Employee Handbook Assistant, a Policy Copilot, or a Course Material Assistant.',
+    cta: 'Build something like this',
+  },
 ];
 
 const HOW_IT_WORKS = [
@@ -248,9 +256,11 @@ export default function Home() {
           </div>
           <h3>Purple Giraffe Copilot</h3>
           <p>
-            A working prototype for specialised troubleshooting and question-answering.
-            It is one example of what Purple Giraffe can build when a workflow benefits
-            from AI-style guidance.
+            A working prototype for specialised troubleshooting and question-answering,
+            built for adtech teams today. The same approach works for company
+            documents too &mdash; SOPs, policies, manuals &mdash; with grounded answers
+            instead of guesses. This is one example of what Purple Giraffe can build
+            when a workflow benefits from AI-style guidance.
           </p>
           <ul className="proto-bullets">
             <li>Try a real working prototype</li>
