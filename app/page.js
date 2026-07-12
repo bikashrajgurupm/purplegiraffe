@@ -15,6 +15,15 @@ const NAV_LINKS = [
 
 const APP_IDEAS = [
   {
+    id: 'inventory',
+    group: 'business',
+    title: 'Business Control Center',
+    eyebrow: 'For inventory and reorders',
+    copy: 'Manage inventory, purchases, sales, suppliers, expenses and business performance from one clear dashboard.',
+    tiny: 'Know what is selling, what is running low and where the money is going.',
+    cta: 'Build something like this',
+  },
+  {
     id: 'docs',
     group: 'business',
     title: 'Document Copilot',
@@ -33,15 +42,6 @@ const APP_IDEAS = [
     eyebrow: 'For sales and enquiries',
     copy: 'Capture enquiries, track status, add notes, set reminders and see who needs a follow-up today.',
     tiny: "Because 'I'll remember' isn't a CRM.",
-    cta: 'Build something like this',
-  },
-  {
-    id: 'inventory',
-    group: 'business',
-    title: 'Stock Goblin',
-    eyebrow: 'For inventory and reorders',
-    copy: 'Track stock, suppliers, daily usage, low-stock alerts and reorder history without living inside Excel.',
-    tiny: 'A tiny app that nags before things run out.',
     cta: 'Build something like this',
   },
   {
