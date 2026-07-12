@@ -205,7 +205,7 @@ export default function Home() {
       )}
 
       <section className="hero">
-        <span className="hero-badge">Custom apps from &#8377;999</span>
+        <span className="hero-badge">CUSTOM APPS FOR WORK AND LIFE</span>
         <h1>
           Build your{' '}
           <span className="cycle-word" key={HERO_WORDS[heroWordIndex]}>{HERO_WORDS[heroWordIndex]}</span>.
@@ -225,7 +225,7 @@ export default function Home() {
           </a>
         </div>
         <p className="hero-micro">
-          Mini builds start at &#8377;999. Own the source code or let us manage the app.
+          Own the source code, or let Purple Giraffe host and manage your app.
         </p>
 
         <div className="hero-visual" aria-hidden="true">
