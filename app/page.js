@@ -221,7 +221,7 @@ export default function Home() {
             Tell us your workflow
           </a>
           <a href="#live-prototype" className="btn btn-ghost" onClick={scrollToId('live-prototype')}>
-            Try the live prototype
+           Explore live prototypes
           </a>
         </div>
         <p className="hero-micro">
