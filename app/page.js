@@ -15,23 +15,16 @@ const NAV_LINKS = [
 
 const APP_IDEAS = [
   {
-    id: 'dental',
-    group: 'customers',
-    title: 'Dental Clinic Desk',
-    eyebrow: 'For clinics and appointment-heavy businesses',
-    copy: 'Manage appointments, patient follow-ups, payments, treatment status, reminders and front-desk tasks in one place.',
-    tiny: 'No medical advice. Just cleaner clinic operations.',
+    id: 'docs',
+    group: 'business',
+    title: 'Doc Whisperer',
+    eyebrow: 'For B2B teams \u2014 HR, legal, compliance and training',
+    copy: 'Built on the same technology as Purple Giraffe Copilot: ask questions about your own documents and get grounded answers, not guesses. Upload PDFs, Word files or website content, summarise, compare versions, extract action items, or turn them into checklists.',
+    tiny: 'Could become an Employee Handbook Assistant, a Policy Copilot, or a Course Material Assistant.',
     cta: 'Build something like this',
+    tryHref: '/apps/copilot',
+    tryLabel: 'Try Copilot',
     featured: true,
-  },
-  {
-    id: 'delivery',
-    group: 'customers',
-    title: 'Delivery Command Board',
-    eyebrow: 'For delivery and local operations',
-    copy: 'Track orders, pickups, drops, riders, payment collection, failed deliveries, COD status and daily dispatches.',
-    tiny: "For when 'Where is this order?' becomes your full-time job.",
-    cta: 'Build something like this',
   },
   {
     id: 'leads',
@@ -52,12 +45,57 @@ const APP_IDEAS = [
     cta: 'Build something like this',
   },
   {
+    id: 'shifts',
+    group: 'business',
+    title: 'Shift Shepherd',
+    eyebrow: 'For teams with rotating shifts',
+    copy: 'Build staff schedules, handle swap requests, confirm shifts and spot coverage gaps before they become a problem.',
+    tiny: "No more 'wait, who's working Saturday?'",
+    cta: 'Build something like this',
+  },
+  {
     id: 'booking',
     group: 'customers',
     title: 'Booking Board',
     eyebrow: 'For services and appointments',
     copy: 'Manage booking requests, slots, customer details, reminders, cancellations and follow-ups.',
     tiny: 'For salons, tutors, trainers, consultants, clinics and classes.',
+    cta: 'Build something like this',
+  },
+  {
+    id: 'restaurant',
+    group: 'customers',
+    title: 'Table Turner',
+    eyebrow: 'For cafes, restaurants and small eateries',
+    copy: 'Manage table status, walk-in waitlists, takeaway orders and daily specials without a clipboard.',
+    tiny: 'Because the clipboard always goes missing at 1pm.',
+    cta: 'Build something like this',
+  },
+  {
+    id: 'dental',
+    group: 'customers',
+    title: 'Dental Clinic Desk',
+    eyebrow: 'For clinics and appointment-heavy businesses',
+    copy: 'Manage appointments, patient follow-ups, payments, treatment status, reminders and front-desk tasks in one place.',
+    tiny: 'No medical advice. Just cleaner clinic operations.',
+    cta: 'Build something like this',
+  },
+  {
+    id: 'delivery',
+    group: 'customers',
+    title: 'Delivery Command Board',
+    eyebrow: 'For delivery and local operations',
+    copy: 'Track orders, pickups, drops, riders, payment collection, failed deliveries, COD status and daily dispatches.',
+    tiny: "For when 'Where is this order?' becomes your full-time job.",
+    cta: 'Build something like this',
+  },
+  {
+    id: 'membership',
+    group: 'customers',
+    title: 'Membership Minder',
+    eyebrow: 'For gyms, studios and clubs',
+    copy: 'Track memberships, renewals, attendance, class bookings and payment status in one place.',
+    tiny: 'So renewals stop happening by accident.',
     cta: 'Build something like this',
   },
   {
@@ -79,15 +117,25 @@ const APP_IDEAS = [
     cta: 'Build my personal tool',
   },
   {
-    id: 'docs',
-    group: 'business',
-    title: 'Doc Whisperer',
-    eyebrow: 'For HR, legal, compliance and training teams',
-    copy: 'Upload PDFs, Word files or website content and ask questions in plain language, with source references instead of guesses. Summarise long documents, compare two versions, extract action items, or turn them into checklists.',
-    tiny: 'Could become an Employee Handbook Assistant, a Policy Copilot, or a Course Material Assistant.',
+    id: 'travel',
+    group: 'yourself',
+    title: 'Trip Sketchpad',
+    eyebrow: 'For personal travel planning',
+    copy: 'Plan itineraries, track bookings, split costs with travel companions and keep every confirmation in one place.',
+    tiny: 'Fewer tabs. Fewer screenshots. One trip plan.',
+    cta: 'Build something like this',
+  },
+  {
+    id: 'recipes',
+    group: 'yourself',
+    title: 'Recipe Rescue',
+    eyebrow: 'For home cooking and meal planning',
+    copy: "Save recipes, plan the week's meals, and auto-build a grocery list from what you're actually cooking.",
+    tiny: "Because 'what's for dinner' shouldn't be a crisis.",
     cta: 'Build something like this',
   },
 ];
+
 
 const IDEA_GROUPS = [
   { key: 'business', label: 'For your business' },
@@ -134,6 +182,7 @@ export default function Home() {
   const [heroWordIndex, setHeroWordIndex] = useState(0);
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
   const [copilotBtnHover, setCopilotBtnHover] = useState(false);
+  const [ideaTryHover, setIdeaTryHover] = useState(null);
   const [form, setForm] = useState({
     name: '', contact: '', buildDescription: '', currentProcess: '', useType: '', budget: '', timeline: '',
   });
@@ -242,7 +291,7 @@ export default function Home() {
             Tell us your workflow
           </a>
           <a href="#live-prototype" className="btn btn-ghost" onClick={scrollToId('live-prototype')}>
-            Try the live prototype
+            Explore live prototypes
           </a>
         </div>
         <p className="hero-micro">
@@ -258,7 +307,7 @@ export default function Home() {
           <span className="flow-arrow">&rarr;</span>
           <div className="flow-box flow-box-accent">&#129412; Purple Giraffe</div>
           <span className="flow-arrow">&rarr;</span>
-          <div className="flow-box">&#10024; Clean little app</div>
+          <div className="flow-box">&#10024; Your custom app</div>
         </div>
       </section>
 
@@ -339,7 +388,31 @@ export default function Home() {
                     <h3>{idea.title}</h3>
                     <p className="idea-copy">{idea.copy}</p>
                     <p className="idea-tiny">{idea.tiny}</p>
-                    <a href="#request" className="card-cta" onClick={buildFromIdea(idea.title)}>{idea.cta} &rarr;</a>
+                    <div className="idea-ctas">
+                      {idea.tryHref && (
+                        <Link
+                          href={idea.tryHref}
+                          onMouseEnter={() => setIdeaTryHover(idea.id)}
+                          onMouseLeave={() => setIdeaTryHover(null)}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                            padding: '0.5rem 0.9rem',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            textDecoration: 'none',
+                            background: ideaTryHover === idea.id ? '#4c2e9e' : '#8b5cf6',
+                            color: '#ffffff',
+                            transition: 'background 0.15s ease',
+                          }}
+                        >
+                          {idea.tryLabel} &rarr;
+                        </Link>
+                      )}
+                      <a href="#request" className="card-cta" onClick={buildFromIdea(idea.title)}>{idea.cta} &rarr;</a>
+                    </div>
                   </article>
                 ))}
               </div>
@@ -892,8 +965,14 @@ export default function Home() {
           color: var(--pg-amber-deep);
           font-style: italic;
         }
-        .idea-card :global(.card-cta) {
+        .idea-ctas {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          flex-wrap: wrap;
           margin-top: 0.4rem;
+        }
+        .idea-card :global(.card-cta) {
           align-self: flex-start;
           text-decoration: none;
           font-weight: 600;
