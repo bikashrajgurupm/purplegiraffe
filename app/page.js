@@ -119,6 +119,7 @@ export default function Home() {
   const [returningUser, setReturningUser] = useState(null);
   const [heroWordIndex, setHeroWordIndex] = useState(0);
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
+  const [copilotBtnHover, setCopilotBtnHover] = useState(false);
   const [form, setForm] = useState({
     name: '', contact: '', buildDescription: '', currentProcess: '', useType: '', budget: '', timeline: '',
   });
@@ -152,6 +153,12 @@ export default function Home() {
   const scrollToId = (id) => (e) => {
     e.preventDefault();
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const buildFromIdea = (ideaTitle) => (e) => {
+    e.preventDefault();
+    setForm((f) => ({ ...f, buildDescription: `Something like "${ideaTitle}" \u2014 ` }));
+    document.getElementById('request')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleSubmit = async (e) => {
@@ -269,8 +276,30 @@ export default function Home() {
             <li>AI is optional &mdash; practical apps come first</li>
           </ul>
           <div className="proto-actions">
-            <Link href="/apps/copilot" className="btn btn-primary btn-copilot-cta">Try Copilot &rarr;</Link>
-            <a href="#request" className="btn btn-ghost" onClick={scrollToId('request')}>Build a private version</a>
+            <Link
+              href="/apps/copilot"
+              onMouseEnter={() => setCopilotBtnHover(true)}
+              onMouseLeave={() => setCopilotBtnHover(false)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                padding: '0.8rem 1.5rem',
+                borderRadius: '10px',
+                fontSize: '0.95rem',
+                fontWeight: 600,
+                textDecoration: 'none',
+                border: '1px solid transparent',
+                cursor: 'pointer',
+                background: copilotBtnHover ? '#4c2e9e' : '#8b5cf6',
+                color: '#ffffff',
+                transition: 'transform 0.15s ease, background 0.15s ease',
+                transform: copilotBtnHover ? 'translateY(-1px)' : 'none',
+              }}
+            >
+              Try Copilot &rarr;
+            </Link>
+            <a href="#request" className="btn btn-ghost" onClick={buildFromIdea('Purple Giraffe Copilot')}>Build something like this</a>
           </div>
           <p className="proto-footnote">
             This is one example. Purple Giraffe also builds simple non-AI business apps.
@@ -290,7 +319,7 @@ export default function Home() {
               <h3>{idea.title}</h3>
               <p className="idea-copy">{idea.copy}</p>
               <p className="idea-tiny">{idea.tiny}</p>
-              <a href="#request" className="card-cta" onClick={scrollToId('request')}>{idea.cta} &rarr;</a>
+              <a href="#request" className="card-cta" onClick={buildFromIdea(idea.title)}>{idea.cta} &rarr;</a>
             </article>
           ))}
         </div>
@@ -767,13 +796,6 @@ export default function Home() {
           gap: 1rem;
           flex-wrap: wrap;
           margin-bottom: 1rem;
-        }
-        .btn-copilot-cta {
-          background: var(--pg-purple);
-          color: white;
-        }
-        .btn-copilot-cta:hover {
-          background: var(--pg-purple-deep);
         }
         .proto-footnote {
           font-size: 0.82rem;
