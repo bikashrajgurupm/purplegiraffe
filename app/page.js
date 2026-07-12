@@ -110,10 +110,10 @@ const APP_IDEAS = [
   {
     id: 'personal',
     group: 'yourself',
-    title: 'Personal Command Center',
+    title: 'Personal Finance Dashboard',
     eyebrow: 'For personal workflows',
-    copy: 'A private tool for habits, study plans, family tasks, budgeting, collections, routines or anything you keep rebuilding in spreadsheets.',
-    tiny: 'Your weird system, but cleaner.',
+    copy: 'Track income, expenses, budgets, subscriptions and savings goals in one private dashboard.',
+    tiny: 'See where your money goes, what is due next and whether you are on track.',
     cta: 'Build my personal tool',
   },
   {
