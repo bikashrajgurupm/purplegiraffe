@@ -16,6 +16,7 @@ const NAV_LINKS = [
 const APP_IDEAS = [
   {
     id: 'dental',
+    group: 'customers',
     title: 'Dental Clinic Desk',
     eyebrow: 'For clinics and appointment-heavy businesses',
     copy: 'Manage appointments, patient follow-ups, payments, treatment status, reminders and front-desk tasks in one place.',
@@ -25,6 +26,7 @@ const APP_IDEAS = [
   },
   {
     id: 'delivery',
+    group: 'customers',
     title: 'Delivery Command Board',
     eyebrow: 'For delivery and local operations',
     copy: 'Track orders, pickups, drops, riders, payment collection, failed deliveries, COD status and daily dispatches.',
@@ -33,6 +35,7 @@ const APP_IDEAS = [
   },
   {
     id: 'leads',
+    group: 'business',
     title: 'Lead Nest',
     eyebrow: 'For sales and enquiries',
     copy: 'Capture enquiries, track status, add notes, set reminders and see who needs a follow-up today.',
@@ -41,6 +44,7 @@ const APP_IDEAS = [
   },
   {
     id: 'inventory',
+    group: 'business',
     title: 'Stock Goblin',
     eyebrow: 'For inventory and reorders',
     copy: 'Track stock, suppliers, daily usage, low-stock alerts and reorder history without living inside Excel.',
@@ -49,6 +53,7 @@ const APP_IDEAS = [
   },
   {
     id: 'booking',
+    group: 'customers',
     title: 'Booking Board',
     eyebrow: 'For services and appointments',
     copy: 'Manage booking requests, slots, customer details, reminders, cancellations and follow-ups.',
@@ -57,6 +62,7 @@ const APP_IDEAS = [
   },
   {
     id: 'custom-orders',
+    group: 'customers',
     title: 'Custom Order Studio',
     eyebrow: 'For made-to-order businesses',
     copy: 'Track custom orders, due dates, advances, delivery notes, customer preferences, add-ons and staff tasks.',
@@ -65,6 +71,7 @@ const APP_IDEAS = [
   },
   {
     id: 'personal',
+    group: 'yourself',
     title: 'Personal Command Center',
     eyebrow: 'For personal workflows',
     copy: 'A private tool for habits, study plans, family tasks, budgeting, collections, routines or anything you keep rebuilding in spreadsheets.',
@@ -73,12 +80,19 @@ const APP_IDEAS = [
   },
   {
     id: 'docs',
+    group: 'business',
     title: 'Doc Whisperer',
     eyebrow: 'For HR, legal, compliance and training teams',
     copy: 'Upload PDFs, Word files or website content and ask questions in plain language, with source references instead of guesses. Summarise long documents, compare two versions, extract action items, or turn them into checklists.',
     tiny: 'Could become an Employee Handbook Assistant, a Policy Copilot, or a Course Material Assistant.',
     cta: 'Build something like this',
   },
+];
+
+const IDEA_GROUPS = [
+  { key: 'business', label: 'For your business' },
+  { key: 'customers', label: 'For your customers' },
+  { key: 'yourself', label: 'For yourself' },
 ];
 
 const HOW_IT_WORKS = [
@@ -312,17 +326,26 @@ export default function Home() {
         <p className="section-sub">
           A few starting points. Yours can be smaller, stranger, simpler, or completely different.
         </p>
-        <div className="ideas-grid">
-          {APP_IDEAS.map((idea) => (
-            <article className={`idea-card${idea.featured ? ' idea-card-featured' : ''}`} key={idea.id}>
-              <p className="idea-eyebrow">{idea.eyebrow}</p>
-              <h3>{idea.title}</h3>
-              <p className="idea-copy">{idea.copy}</p>
-              <p className="idea-tiny">{idea.tiny}</p>
-              <a href="#request" className="card-cta" onClick={buildFromIdea(idea.title)}>{idea.cta} &rarr;</a>
-            </article>
-          ))}
-        </div>
+        {IDEA_GROUPS.map((group) => {
+          const groupIdeas = APP_IDEAS.filter((idea) => idea.group === group.key);
+          if (groupIdeas.length === 0) return null;
+          return (
+            <div className="ideas-group" key={group.key}>
+              <h3 className="ideas-group-title">{group.label}</h3>
+              <div className="ideas-grid">
+                {groupIdeas.map((idea) => (
+                  <article className={`idea-card${idea.featured ? ' idea-card-featured' : ''}`} key={idea.id}>
+                    <p className="idea-eyebrow">{idea.eyebrow}</p>
+                    <h3>{idea.title}</h3>
+                    <p className="idea-copy">{idea.copy}</p>
+                    <p className="idea-tiny">{idea.tiny}</p>
+                    <a href="#request" className="card-cta" onClick={buildFromIdea(idea.title)}>{idea.cta} &rarr;</a>
+                  </article>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </section>
 
       <section className="how" id="how-it-works">
@@ -807,6 +830,21 @@ export default function Home() {
           max-width: 1120px;
           margin: 0 auto;
           padding: 3rem 1.5rem;
+        }
+        .ideas-group {
+          margin-bottom: 2.5rem;
+        }
+        .ideas-group:last-child {
+          margin-bottom: 0;
+        }
+        .ideas-group-title {
+          font-family: var(--font-display);
+          font-size: 1.15rem;
+          font-weight: 600;
+          color: var(--pg-ink);
+          margin-bottom: 1rem;
+          padding-bottom: 0.6rem;
+          border-bottom: 1px solid var(--pg-line);
         }
         .ideas-grid {
           display: grid;
