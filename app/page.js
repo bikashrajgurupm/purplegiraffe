@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-const HERO_WORDS = ['clinic desk', 'delivery tracker', 'booking board', 'customer portal', 'order dashboard', 'personal tool'];
+const HERO_WORDS = ['clinic desk', 'delivery tracker', 'booking board', 'customer portal', 'order dashboard', 'personal tool', 'lead tracker', 'inventory tracker', 'staff schedule', 'restaurant board', 'member roster', 'document assistant', 'travel planner', 'meal planner', 'workflow app'];
 
 const NAV_LINKS = [
   { label: 'Live Prototype', href: '#live-prototype' },
