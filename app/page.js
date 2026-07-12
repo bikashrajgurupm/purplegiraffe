@@ -237,7 +237,7 @@ export default function Home() {
           <span className="flow-arrow">&rarr;</span>
           <div className="flow-box flow-box-accent">&#129412; Purple Giraffe</div>
           <span className="flow-arrow">&rarr;</span>
-          <div className="flow-box">&#10024; Clean little app</div>
+          <div className="flow-box">&#10024; Your custom app</div>
         </div>
       </section>
 
