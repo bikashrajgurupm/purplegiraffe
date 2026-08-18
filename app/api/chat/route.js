@@ -253,7 +253,7 @@ Example of correct formatting:
     // Generate response with Groq
     console.log('💭 Generating response with Llama 3.1...');
     const completion = await groq.chat.completions.create({
-      model: "llama-3.1-8b-instant",
+      model: "openai/gpt-oss-20b",
       messages: messages,
       temperature: 0.4,
       max_tokens: 2000,
