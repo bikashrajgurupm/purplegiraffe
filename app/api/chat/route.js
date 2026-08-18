@@ -141,9 +141,14 @@ function isRealAnswer(aiResponse) {
 }
 
 export async function POST(request) {
+  let message, sessionId;
   try {
-    const { message, sessionId } = await request.json();
-    
+    ({ message, sessionId } = await request.json());
+  } catch (parseError) {
+    return Response.json({ error: 'Invalid request body' }, { status: 400 });
+  }
+
+  try {
     // Get user from auth header
     const authHeader = request.headers.get('authorization');
     const token = authHeader?.replace('Bearer ', '');
@@ -366,7 +371,6 @@ Example of correct formatting:
     
     let sessionCount = 0;
     try {
-      const { sessionId } = await request.json();
       const { data: session } = await supabase
         .from('sessions')
         .select('question_count')
