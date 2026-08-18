@@ -414,7 +414,7 @@ FORMATTING RULES:
     
     console.log('Sending to Llama 3.1 for analysis...');
     const completion = await groq.chat.completions.create({
-      model: "llama-3.1-8b-instant",
+      model: "openai/gpt-oss-20b",
       messages: messages,
       temperature: 0.4,
       max_tokens: 2000,
