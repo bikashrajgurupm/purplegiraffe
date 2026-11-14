@@ -9,17 +9,19 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@opentelemetry/api": "1.9.0",
     "@supabase/supabase-js": "^2.39.0",
+    "@vercel/otel": "1.14.2",
+    "bcrypt": "^5.1.1",
+    "groq-sdk": "^0.3.0",
+    "jsonwebtoken": "^9.0.2",
     "next": "14.0.4",
     "openai": "^4.24.1",
+    "pdf-parse": "^1.1.1",
     "react": "^18",
     "react-dom": "^18",
-    "bcrypt": "^5.1.1",
-    "jsonwebtoken": "^9.0.2",
-    "groq-sdk": "^0.3.0",
     "resend": "^3.1.0",
-    "tesseract.js": "^5.0.4",
-      "pdf-parse": "^1.1.1"
+    "tesseract.js": "^5.0.4"
   },
   "devDependencies": {
     "eslint": "^8",
